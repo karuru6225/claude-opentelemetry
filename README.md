@@ -110,6 +110,12 @@ GF_SECURITY_ADMIN_PASSWORD=...   # Grafana 管理者パスワード
 .\manage.ps1 deploy -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
 ```
 
+> **注意**: 初回デプロイ時は `grafana_data` ボリュームが存在しない状態で起動する必要がある。既存ボリュームがある場合は削除してから再デプロイ。
+>
+> ```bash
+> docker compose down && docker volume rm claude-monitoring_grafana_data
+> ```
+
 ---
 
 ## 日常の使い方
@@ -149,7 +155,7 @@ GF_SECURITY_ADMIN_PASSWORD=...   # Grafana 管理者パスワード
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.<your-domain>",
     "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Basic <base64(claude:<password>)>",
-    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "delta",
     "OTEL_METRIC_EXPORT_INTERVAL": "10000",
     "OTEL_LOGS_EXPORT_INTERVAL": "5000",
     "OTEL_LOG_TOOL_DETAILS": "1"

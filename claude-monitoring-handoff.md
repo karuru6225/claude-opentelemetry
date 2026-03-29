@@ -1,206 +1,191 @@
 # Claude Code 監視スタック 引き継ぎ資料
 
-## このプロジェクトの目的
+## 現在の状態
 
-Claude Code（AI コーディングアシスタント）の利用状況を OpenTelemetry で収集し、自前の Grafana で可視化する。
-コスト、トークン消費、ツール使用状況、セッション情報などをモニタリングする。
+構築・稼働済み。AWS EC2 上で動作している。
 
 ---
 
-## 背景・前セッションで判明したこと
+## アーキテクチャ
 
-### Claude Code の OTel 対応
+```text
+Claude Code (local)
+    │ OTLP HTTP/protobuf (Basic 認証)
+    ▼
+nginx (Let's Encrypt TLS)
+    ├── otel.<domain>:443  → OTel Collector :4318
+    └── grafana.<domain>:443 → Grafana :3000
 
-Claude Code は標準で OTel テレメトリをサポートしている。以下の環境変数で有効化できる。
+EC2 t3.micro (動的IP + Route53 自動更新、EIP なし)
+    └── docker compose
+          ├── otel-collector (otel/opentelemetry-collector-contrib)
+          │     ├── metrics → prometheusremotewrite → Prometheus :9090
+          │     └── logs    → otlp_http/loki        → Loki :3100
+          ├── prometheus
+          ├── loki
+          └── grafana (user: 1000:1000)
+```
+
+---
+
+## Claude Code 側の設定
+
+`~/.claude/settings.json` の `env` セクション：
 
 ```json
-// ~/.claude/settings.json の env セクションに追加
 {
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://<collector-host>:<port>",
-    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Basic <base64(user:pass)>",
-    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.<your-domain>",
+    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Basic <base64(claude:<password>)>",
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "delta",
     "OTEL_METRIC_EXPORT_INTERVAL": "10000",
-    "OTEL_LOGS_EXPORT_INTERVAL": "5000"
+    "OTEL_LOGS_EXPORT_INTERVAL": "5000",
+    "OTEL_LOG_TOOL_DETAILS": "1"
   }
 }
 ```
 
-### 重要: Temporality の問題
+### 各設定の意図
 
-Claude Code はデフォルトで Delta 形式でメトリクスを送る。Prometheus は Cumulative しか受け付けない。
-**`OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative` が必須。** これがないと Prometheus が全メトリクスを 500 エラーで拒否する。
+- `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta` — プロセス再起動によるカウンターリセットでグラフが落ちないようにするため delta を使用。Collector 側で累積に変換して Prometheus に送る
+- `OTEL_LOG_TOOL_DETAILS: 1` — ツール呼び出しの入力引数（ファイルパス、WebFetch URL等）を Loki に記録する
+- `OTEL_LOGS_EXPORTER` は公式ドキュメントに記載あり（動作確認済み）
+- `OTEL_TRACES_EXPORTER` は未実装のため設定不要
 
-### 取得できるメトリクス（Prometheus 上のメトリック名）
+---
+
+## 取得できるデータ
+
+### メトリクス（Prometheus）
 
 | メトリック名 | 内容 |
 |---|---|
 | `claude_code_cost_usage_USD_total` | コスト（USD） |
-| `claude_code_token_usage_tokens_total` | トークン消費量 |
+| `claude_code_token_usage_tokens_total` | トークン消費量（type: input/output/cache_read/cache_creation） |
 | `claude_code_session_count_total` | セッション数 |
 | `claude_code_lines_of_code_count_total` | 変更コード行数 |
-| `claude_code_code_edit_tool_decision_total` | コード編集ツール決定 |
+| `claude_code_code_edit_tool_decision_total` | コード編集ツール決定数 |
 
-ラベルには `model`, `session_id`, `user_email`, `organization_id` などが含まれる。
+ラベル: `model`, `session_id`, `user_email`, `organization_id` など
 
-ログイベント（OTLP Logs）:
-- `claude_code.user_prompt` — プロンプト
-- `claude_code.tool_result` — ツール実行結果
-- `claude_code.api_request` / `claude_code.api_error`
+### ログイベント（Loki）
 
-### OTel Demo スタックで検証済み
-
-localhost:8080 で OTel デモスタックを使って動作確認済み。データは正常に流れた。
-ただしデモスタックは認証なし・設定カスタマイズ不可のため、専用スタックを構築する。
-
----
-
-## 構築するスタック構成
-
-```
-Claude Code
-    │ OTLP HTTP（Basic 認証付き）
-    ▼
-OTel Collector（otel/opentelemetry-collector-contrib）
-    │ Prometheus Remote Write
-    ▼
-Prometheus（メトリクス保存）
-    │
-    ▼
-Grafana（可視化）
-    ※ Loki（ログ保存）は任意で追加
-```
+| イベント名 | 内容 |
+|---|---|
+| `claude_code.api_request` | API リクエスト（コスト・トークン情報含む） |
+| `claude_code.user_prompt` | ユーザー入力 |
+| `claude_code.tool_decision` | ツール呼び出し判断 |
+| `claude_code.tool_result` | ツール実行結果（tool_name、duration_ms 等） |
+| `claude_code.api_error` | API エラー |
 
 ---
 
-## 実装すること
+## Grafana
 
-### 1. docker-compose.yml
+### データソース
 
-以下のサービスを含める：
-- `otel-collector` — `otel/opentelemetry-collector-contrib` イメージ
-- `prometheus` — `prom/prometheus` イメージ
-- `grafana` — `grafana/grafana` イメージ
+- Prometheus: `uid: prometheus`、`http://prometheus:9090`
+- Loki: `uid: loki`、`http://loki:3100`
 
-ポート構成（例）:
-- Grafana: `3000:3000`
-- Prometheus: `9090:9090`（外部公開は任意）
-- OTel Collector OTLP HTTP: `4318:4318`（Claude Code からのデータ受け口）
+いずれも provisioning で自動設定済み（`grafana/provisioning/datasources/`）。
 
-### 2. OTel Collector 設定（otelcol-config.yaml）
+### プロビジョニングダッシュボード
 
-**必須: basicauth extension を使って OTLP 受信に認証をかける**
+`grafana/provisioning/dashboards/claude-code.json` が自動ロードされる。
 
-```yaml
-extensions:
-  basicauth/otlp:
-    htpasswd:
-      inline: |
-        <user>:<htpasswd形式のハッシュ>
+delta temporality に対応するため、stat パネルのクエリは `increase(metric[$__range])` 形式を使用。
 
-receivers:
-  otlp:
-    protocols:
-      http:
-        auth:
-          authenticator: basicauth/otlp
-        endpoint: 0.0.0.0:4318
+### Loki の有用なクエリ
 
-processors:
-  batch:
-  # Delta→Cumulative 変換（念のため）
-  # cumulativetodelta は不要、送り側で cumulative 設定済み
+```logql
+# ツール別の呼び出し回数
+sum by (tool_name) (
+  count_over_time({service_name="claude-code"} | tool_name != "" [1h])
+)
 
-exporters:
-  prometheusremotewrite:
-    endpoint: http://prometheus:9090/api/v1/write
-  debug:
-    verbosity: basic
-
-service:
-  extensions: [basicauth/otlp]
-  pipelines:
-    metrics:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [prometheusremotewrite, debug]
-    logs:
-      receivers: [otlp]
-      processors: [batch]
-      exporters: [debug]
-```
-
-### 3. Prometheus 設定（prometheus.yml）
-
-Remote Write 受け入れを有効化するため、起動フラグに `--web.enable-remote-write-receiver` が必要。
-
-```yaml
-global:
-  scrape_interval: 15s
-```
-
-docker-compose の command で `--web.enable-remote-write-receiver` を渡す。
-
-### 4. Grafana 設定
-
-- Prometheus データソースを追加（`http://prometheus:9090`）
-- ダッシュボードを作成：コスト推移、トークン消費、セッション数など
-
-### 5. htpasswd ハッシュの生成
-
-```bash
-htpasswd -nbB claude <任意のパスワード>
-```
-
-または Docker で:
-```bash
-docker run --rm httpd htpasswd -nbB claude <パスワード>
+# WebFetch のログ詳細
+{service_name="claude-code"} | tool_name="WebFetch"
 ```
 
 ---
 
-## 完成後の Claude Code 側設定
+## 既知のハマりポイント
 
-`~/.claude/settings.json` に追加:
+### OTel Collector の exporter 名
 
-```json
-{
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_METRICS_EXPORTER": "otlp",
-    "OTEL_LOGS_EXPORTER": "otlp",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Basic <base64(user:pass)>",
-    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
-    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
-    "OTEL_LOGS_EXPORT_INTERVAL": "5000"
-  }
-}
-```
+`loki` exporter はこのバージョン（v0.148.0）に含まれていない。Loki の OTLP エンドポイント（`:3100/otlp`）に `otlp_http/loki` で送る。`otlphttp` は非推奨（`otlp_http` を使う）。
 
-`Authorization` ヘッダーの値:
+### Grafana の権限問題
+
+Grafana コンテナは `user: "1000:1000"` で起動（ec2-user と同じ UID）。これにより provisioning ファイルの読み取り権限が解決される。
+
+`grafana_data` ボリュームが uid 472（旧 Grafana デフォルト）で作られている場合は起動失敗する。その場合はボリュームを削除して再作成：
+
 ```bash
-echo -n "claude:<パスワード>" | base64
+docker compose down
+docker volume rm claude-monitoring_grafana_data
+docker compose up -d
 ```
 
-設定後は Claude Code を再起動して反映させる。
+### Grafana provisioning の古いファイル残留
+
+deploy 時に `grafana/` ディレクトリをリモートで一度削除してから転送する（manage.ps1 内で処理済み）。削除しないと削除済みの datasource ファイルが残り、存在しないサービスを参照して Grafana が起動失敗する。
+
+### Prometheus 503 エラー
+
+Collector 再起動直後に Prometheus への remote write が 503 になることがある。retry で自動回復するため放置でよい。
 
 ---
 
-## 動作確認方法
+## インフラ管理
 
-```bash
-# Prometheus にメトリクスが入っているか確認
-curl -s "http://localhost:9090/api/v1/label/__name__/values" | \
-  grep claude
+### EC2
 
-# コスト確認
-curl -s "http://localhost:9090/api/v1/query?query=claude_code_cost_usage_USD_total"
+- リージョン: ap-northeast-1
+- インスタンスタイプ: t3.micro
+- EIP なし（起動のたびに IP が変わる）
+- 起動時に manage.ps1 start で Route53 A レコードを更新
+
+### SSH
+
+- ポート: 2222
+- キーペア: `claude-monitoring`
+- Terraform の `ssh_open` 変数で Security Group を開閉
+
+### Terraform
+
+- バックエンド: S3 (`claude-monitoring-tfstate`)
+- 管理コマンド: `infra\manage.ps1 apply/plan/destroy`
+
+### コスト
+
+- EC2 停止中: ほぼ $0
+- 稼働中: ~$3/月（t3.micro オンデマンド）
+
+---
+
+## manage.ps1 コマンド
+
+| コマンド | 説明 |
+|---|---|
+| `.\manage.ps1 start` | EC2 起動 + Route53 更新 |
+| `.\manage.ps1 stop` | EC2 停止 |
+| `.\manage.ps1 setup -KeyFile <pem>` | 初回のみ: docker/nginx/certbot インストール |
+| `.\manage.ps1 deploy -KeyFile <pem>` | 設定ファイル転送 + コンテナ再起動 |
+
+---
+
+## 会社展開時の拡張
+
+`.env` で Google Workspace OAuth を有効化するだけで SSO が使える：
+
+```ini
+GF_AUTH_GOOGLE_ENABLED=true
+GF_AUTH_GOOGLE_CLIENT_ID=<クライアント ID>
+GF_AUTH_GOOGLE_CLIENT_SECRET=<シークレット>
+GF_AUTH_GOOGLE_ALLOWED_DOMAINS=yourcompany.com
 ```
-
-Grafana: http://localhost:3000

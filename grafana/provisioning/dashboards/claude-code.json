@@ -11,7 +11,7 @@
       "title": "コスト累計 (USD)",
       "type": "stat",
       "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "colorMode": "value",
@@ -21,7 +21,7 @@
       },
       "targets": [
         {
-          "expr": "sum(claude_code_cost_usage_USD_total)",
+          "expr": "sum(increase(claude_code_cost_usage_USD_total[$__range]))",
           "legendFormat": "累計コスト"
         }
       ]
@@ -31,7 +31,7 @@
       "title": "トークン消費量 累計",
       "type": "stat",
       "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "colorMode": "value",
@@ -39,7 +39,7 @@
       },
       "targets": [
         {
-          "expr": "sum(claude_code_token_usage_tokens_total)",
+          "expr": "sum(increase(claude_code_token_usage_tokens_total[$__range]))",
           "legendFormat": "累計トークン"
         }
       ]
@@ -49,7 +49,7 @@
       "title": "セッション数 累計",
       "type": "stat",
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "colorMode": "value",
@@ -57,7 +57,7 @@
       },
       "targets": [
         {
-          "expr": "sum(claude_code_session_count_total)",
+          "expr": "sum(increase(claude_code_session_count_total[$__range]))",
           "legendFormat": "セッション数"
         }
       ]
@@ -67,7 +67,7 @@
       "title": "コード変更行数 累計",
       "type": "stat",
       "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "colorMode": "value",
@@ -75,7 +75,7 @@
       },
       "targets": [
         {
-          "expr": "sum(claude_code_lines_of_code_count_total)",
+          "expr": "sum(increase(claude_code_lines_of_code_count_total[$__range]))",
           "legendFormat": "変更行数"
         }
       ]
@@ -85,7 +85,7 @@
       "title": "コスト推移（1時間ごと）",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "unit": "currencyUSD",
@@ -105,7 +105,7 @@
       "title": "トークン消費量（1時間ごと）",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": { "tooltip": { "mode": "multi" } },
       "targets": [
         {
@@ -119,11 +119,11 @@
       "title": "モデル別コスト内訳",
       "type": "piechart",
       "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "options": { "pieType": "donut" },
       "targets": [
         {
-          "expr": "sum by (model) (claude_code_cost_usage_USD_total)",
+          "expr": "sum by (model) (increase(claude_code_cost_usage_USD_total[$__range]))",
           "legendFormat": "{{model}}"
         }
       ]
@@ -133,7 +133,7 @@
       "title": "セッション数（日別）",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 12, "w": 16, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
           "expr": "sum(increase(claude_code_session_count_total[1d]))",
@@ -142,14 +142,5 @@
       ]
     }
   ],
-  "templating": {
-    "list": [
-      {
-        "name": "DS_PROMETHEUS",
-        "type": "datasource",
-        "pluginId": "prometheus",
-        "hide": 2
-      }
-    ]
-  }
+  "templating": { "list": [] }
 }

@@ -181,6 +181,10 @@ elseif ($Action -eq 'deploy') {
   scp @SshOpt '.env'               $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt 'otelcol-config.yaml' $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'prometheus'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  # grafana は古いファイルが残らないようディレクトリごと削除してから転送
+  ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `
+    'rm -rf /opt/claude-monitoring/grafana/'
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'grafana'         $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'nginx'           $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'loki'            $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
