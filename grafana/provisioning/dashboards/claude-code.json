@@ -57,7 +57,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(claude_code_session_count_total[$__range]))",
+          "expr": "count(count_over_time(claude_code_session_count_total[$__range]) > 0)",
           "legendFormat": "セッション数"
         }
       ]
@@ -136,8 +136,42 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(increase(claude_code_session_count_total[1d]))",
+          "expr": "count(count_over_time(claude_code_session_count_total[1d]) > 0)",
           "legendFormat": "セッション数/日"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "コスト累計推移",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": { "lineWidth": 2 }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "expr": "sum(claude_code_cost_usage_USD_total)",
+          "legendFormat": "累計コスト"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "トークン消費量 累計推移",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "expr": "sum by (type) (claude_code_token_usage_tokens_total)",
+          "legendFormat": "{{type}}"
         }
       ]
     }
