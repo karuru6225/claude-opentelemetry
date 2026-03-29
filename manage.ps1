@@ -183,6 +183,7 @@ elseif ($Action -eq 'deploy') {
   scp @SshOpt -r 'prometheus'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'grafana'         $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'nginx'           $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt -r 'loki'            $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # nginx 設定：ドメイン名を置換して /etc/nginx/conf.d/ に配置
   Write-Host '==> Configuring nginx...'

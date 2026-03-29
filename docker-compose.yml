@@ -24,6 +24,16 @@ services:
       - "127.0.0.1:9090:9090"
     restart: unless-stopped
 
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "127.0.0.1:3100:3100"
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:latest
     volumes:
@@ -35,8 +45,10 @@ services:
       - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
+      - loki
     restart: unless-stopped
 
 volumes:
   prometheus_data:
+  loki_data:
   grafana_data:
