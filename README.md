@@ -21,6 +21,8 @@ grafana.<domain>──┘
 
 **コスト**: 使用時のみ起動（~$3/月）
 
+![Grafana ダッシュボード](docs/images/grafana_dashboard.png)
+
 ---
 
 ## 前提条件
