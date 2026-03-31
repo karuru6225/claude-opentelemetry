@@ -192,7 +192,7 @@ ssh_open = true   # 開く
 ssh_open = false  # 閉じる（デフォルト）
 ```
 
-変更後に `infra\manage.ps1 apply` で反映。
+変更後に `infra\tf.ps1 apply` で反映。
 
 ```powershell
 ssh -i $HOME\.ssh\claude-monitoring.pem -p 2222 ec2-user@<IP>

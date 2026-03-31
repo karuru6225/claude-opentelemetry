@@ -63,11 +63,11 @@ get_tf_output() {
   local key=$1
   local val
   if ! val=$(terraform -chdir=infra output -raw "$key" 2>/dev/null); then
-    echo "terraform output '$key' not found. Run 'infra/manage.sh apply' first." >&2
+    echo "terraform output '$key' not found. Run 'infra/tf.sh apply' first." >&2
     exit 1
   fi
   if [[ -z "$val" ]]; then
-    echo "terraform output '$key' not found. Run 'infra/manage.sh apply' first." >&2
+    echo "terraform output '$key' not found. Run 'infra/tf.sh apply' first." >&2
     exit 1
   fi
   printf '%s' "$val"

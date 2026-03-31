@@ -34,7 +34,7 @@ if ($Profile) {
 function Get-TfOutput([string]$Key) {
   $val = terraform -chdir=infra output -raw $Key 2>$null
   if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrEmpty($val)) {
-    Write-Error "terraform output '$Key' not found. Run 'infra\manage.ps1 apply' first."
+    Write-Error "terraform output '$Key' not found. Run 'infra\tf.ps1 apply' first."
     exit 1
   }
   return $val

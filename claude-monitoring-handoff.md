@@ -159,7 +159,7 @@ Collector 再起動直後に Prometheus への remote write が 503 になるこ
 ### Terraform
 
 - バックエンド: S3 (`claude-monitoring-tfstate`)
-- 管理コマンド: `infra\manage.ps1 apply/plan/destroy`
+- 管理コマンド: `infra\tf.ps1 apply/plan/destroy`
 
 ### コスト
 
