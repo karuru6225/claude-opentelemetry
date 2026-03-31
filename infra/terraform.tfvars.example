@@ -5,6 +5,12 @@ ssh_key_name      = "my-key"                  # EC2 キーペア名
 # ssh_open = false  # true にすると SSH ポートが Security Group で開く
 # ssh_port = 2222   # SSH ポート番号
 
+# 既存 VPC / サブネットを使う場合（省略時はデフォルト VPC）
+# subnet_id のみ指定すると、そのサブネットの VPC に Security Group を作成する
+# vpc_id を指定する場合は必ず subnet_id も指定すること（同一 VPC 内のサブネット）
+# vpc_id     = "vpc-xxxxxxxx"
+# subnet_id  = "subnet-xxxxxxxx"
+
 # 以下はデフォルト値から変更する場合のみ記載
 # aws_region        = "ap-northeast-1"
 # project           = "claude-monitoring"

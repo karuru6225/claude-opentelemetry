@@ -46,3 +46,17 @@ variable "instance_type" {
   description = "EC2 インスタンスタイプ"
   default     = "t3.micro"
 }
+
+variable "vpc_id" {
+  description = "既存 VPC ID。省略時はリージョンのデフォルト VPC 上に Security Group / EC2 を配置。subnet_id を指定する場合、省略するとサブネットから VPC を自動判定"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "subnet_id" {
+  description = "EC2 を配置するサブネット ID（パブリック IP が必要ならパブリックサブネットを指定）。省略時はデフォルト VPC の既定の挙動"
+  type        = string
+  default     = null
+  nullable    = true
+}

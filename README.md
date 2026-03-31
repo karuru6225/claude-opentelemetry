@@ -92,19 +92,15 @@ cd ..
 .\manage.ps1 setup -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
 ```
 
-### 6. .env を編集
+### 6. OTel 用 `otel.htpasswd` と `.env`
+
+bcrypt の `$` は Docker Compose の `.env` 展開で壊れやすいため、**Basic 認証は `otel.htpasswd` ファイル**で渡す（`.gitignore` 済み）。
 
 ```powershell
-# htpasswd ハッシュを生成（claude が OTel Collector のユーザー名）
-docker run --rm httpd htpasswd -nbB claude <任意のパスワード>
+docker run --rm httpd htpasswd -nbB claude "<任意のパスワード>" > otel.htpasswd
 ```
 
-`.env` を開いて以下を設定：
-
-```ini
-OTEL_HTPASSWD=claude:$2y$05$...  # 上で生成したハッシュ
-GF_SECURITY_ADMIN_PASSWORD=...   # Grafana 管理者パスワード
-```
+`.env` には Grafana 用など（`GF_SECURITY_ADMIN_PASSWORD` 等）だけを設定する。
 
 ### 7. 設定ファイルをデプロイしてコンテナ起動
 

@@ -27,3 +27,13 @@ output "ssh_port" {
   description = "SSH ポート番号（manage.ps1 setup で使用）"
   value       = var.ssh_port
 }
+
+output "vpc_id" {
+  description = "Security Group / EC2 が配置されている VPC ID"
+  value       = aws_security_group.main.vpc_id
+}
+
+output "subnet_id" {
+  description = "EC2 が配置されているサブネット ID"
+  value       = aws_instance.main.subnet_id
+}

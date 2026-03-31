@@ -2,5 +2,18 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-# Remote Write で受け取るだけなのでスクレイプ設定は最小限
+# OTLP で Collector からメトリクスを受ける（--web.enable-otlp-receiver が必要）
+# バッチ送信でタイムスタンプが逆順になりやすいため out_of_order を有効にする
+storage:
+  tsdb:
+    out_of_order_time_window: 30m
+
+otlp:
+  promote_resource_attributes:
+    - service.instance.id
+    - service.name
+    - service.namespace
+    - service.version
+
+# スクレイプは使わず OTLP のみ
 scrape_configs: []

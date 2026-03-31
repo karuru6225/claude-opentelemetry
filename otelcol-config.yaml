@@ -1,8 +1,8 @@
 extensions:
   basicauth/otlp:
     htpasswd:
-      # htpasswd -nbB claude <password> で生成したハッシュを .env の OTEL_HTPASSWD に設定する
-      inline: "${env:OTEL_HTPASSWD}"
+      # 平文の bcrypt を .env に書くと Docker Compose が $ を壊すため、ホストのファイルをマウントする。
+      file: /etc/otelcol-contrib/otel.htpasswd
 
 receivers:
   otlp:
@@ -17,8 +17,9 @@ processors:
     timeout: 10s
 
 exporters:
-  prometheusremotewrite:
-    endpoint: http://prometheus:9090/api/v1/write
+  # Prometheus 3 の OTLP 受信（/api/v1/otlp/v1/metrics）。remote write より delta 暫定メトリクスと相性が良い。
+  otlphttp/prometheus:
+    endpoint: http://prometheus:9090/api/v1/otlp
     tls:
       insecure: true
   otlp_http/loki:
@@ -34,7 +35,7 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [prometheusremotewrite, debug]
+      exporters: [otlphttp/prometheus, debug]
     logs:
       receivers: [otlp]
       processors: [batch]

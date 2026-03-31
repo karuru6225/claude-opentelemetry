@@ -1,11 +1,27 @@
 locals {
   otel_domain    = "${var.otel_subdomain}.${trimsuffix(data.aws_route53_zone.main.name, ".")}"
   grafana_domain = "${var.grafana_subdomain}.${trimsuffix(data.aws_route53_zone.main.name, ".")}"
+
+  # subnet 指定時はその VPC に SG を紐づける。vpc_id も指定されていれば一致必須（precondition）
+  vpc_id_for_security_group = var.subnet_id != null ? coalesce(var.vpc_id, data.aws_subnet.ec2[0].vpc_id) : var.vpc_id
+}
+
+data "aws_subnet" "ec2" {
+  count = var.subnet_id != null ? 1 : 0
+  id    = var.subnet_id
+}
+
+check "vpc_requires_subnet" {
+  assert {
+    condition     = var.vpc_id == null || var.subnet_id != null
+    error_message = "vpc_id を指定する場合は subnet_id も指定してください（サブネットはその VPC 内である必要があります）。"
+  }
 }
 
 resource "aws_security_group" "main" {
   name        = "${var.project}-sg"
   description = "Claude Code monitoring stack"
+  vpc_id      = local.vpc_id_for_security_group
 
   ingress {
     description = "HTTPS"
@@ -84,11 +100,19 @@ resource "aws_instance" "main" {
   ami                    = data.aws_ami.al2023.id
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name
+  subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.main.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   # パブリック IP を自動割り当て（起動のたびに変わる、EIP なし）
   associate_public_ip_address = true
+
+  lifecycle {
+    precondition {
+      condition     = var.vpc_id == null || var.subnet_id == null || data.aws_subnet.ec2[0].vpc_id == var.vpc_id
+      error_message = "vpc_id と subnet_id が同じ VPC に属していません。subnet の VPC に合わせて vpc_id を直すか、vpc_id を省略してください。"
+    }
+  }
 
   root_block_device {
     volume_type = "gp3"

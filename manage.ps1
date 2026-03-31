@@ -166,6 +166,10 @@ elseif ($Action -eq 'deploy') {
     Write-Error ".env not found. Copy .env.example to .env and fill in the values."
     exit 1
   }
+  if (-not (Test-Path 'otel.htpasswd')) {
+    Write-Error "otel.htpasswd not found. Create with htpasswd output redirected to otel.htpasswd (see .env.example)."
+    exit 1
+  }
 
   $Ip = Get-InstanceIp $InstanceId
 
@@ -180,6 +184,7 @@ elseif ($Action -eq 'deploy') {
   scp @SshOpt 'docker-compose.yml' $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt '.env'               $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt 'otelcol-config.yaml' $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt 'otel.htpasswd'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   scp @SshOpt -r 'prometheus'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   # grafana は古いファイルが残らないようディレクトリごと削除してから転送
   ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `

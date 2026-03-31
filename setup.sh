@@ -22,6 +22,7 @@ chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 # nginx インストール
 dnf install -y nginx
 systemctl enable nginx
+systemctl start nginx
 
 # certbot インストール（Route53 DNS チャレンジ用）
 dnf install -y python3-pip

@@ -1,5 +1,6 @@
 # 秘密情報
 .env
+otel.htpasswd
 infra/terraform.tfvars
 infra/backend.tfbackend
 
