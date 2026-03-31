@@ -63,7 +63,7 @@ EC2 t3.micro (動的IP + Route53 自動更新、EIP なし)
 ### メトリクス（Prometheus）
 
 | メトリック名 | 内容 |
-|---|---|
+| --- | --- |
 | `claude_code_cost_usage_USD_total` | コスト（USD） |
 | `claude_code_token_usage_tokens_total` | トークン消費量（type: input/output/cache_read/cache_creation） |
 | `claude_code_session_count_total` | セッション数 |
@@ -75,7 +75,7 @@ EC2 t3.micro (動的IP + Route53 自動更新、EIP なし)
 ### ログイベント（Loki）
 
 | イベント名 | 内容 |
-|---|---|
+| --- | --- |
 | `claude_code.api_request` | API リクエスト（コスト・トークン情報含む） |
 | `claude_code.user_prompt` | ユーザー入力 |
 | `claude_code.tool_decision` | ツール呼び出し判断 |
@@ -171,7 +171,7 @@ Collector 再起動直後に Prometheus への remote write が 503 になるこ
 ## manage.ps1 コマンド
 
 | コマンド | 説明 |
-|---|---|
+| --- | --- |
 | `.\manage.ps1 start` | EC2 起動 + Route53 更新 |
 | `.\manage.ps1 stop` | EC2 停止 |
 | `.\manage.ps1 setup -KeyFile <pem>` | 初回のみ: docker/nginx/certbot インストール |
