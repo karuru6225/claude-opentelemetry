@@ -15,9 +15,10 @@ grafana.<domain>──┘
                               │
                           Prometheus :9090 (メトリクス)
                           Loki :3100 (ログ)
+                          Athena (IoT センサーデータ ※別プロジェクト)
 ```
 
-**収集データ**: メトリクス（コスト・トークン・セッション数）→ Prometheus、ログ（ツール呼び出し履歴）→ Loki
+**収集データ**: メトリクス（コスト・トークン・セッション数）→ Prometheus、ログ（ツール呼び出し履歴）→ Loki、IoT センサーデータ → Athena（読み取りのみ）
 
 **コスト**: 使用時のみ起動（~$3/月）
 
@@ -102,7 +103,25 @@ docker run --rm httpd htpasswd -nbB claude "<任意のパスワード>" > otel.h
 
 `.env` には Grafana 用など（`GF_SECURITY_ADMIN_PASSWORD` 等）だけを設定する。
 
-### 7. 設定ファイルをデプロイしてコンテナ起動
+### 7. Athena データソースの出力先 S3 を設定
+
+`car-iot-services` プロジェクトと同じ AWS アカウントで動かしている場合、Grafana から Athena 経由で IoT センサーデータを可視化できる。
+
+`car-iot-services/infra` で以下を実行してバケット名を確認：
+
+```powershell
+terraform output s3_bucket
+```
+
+`.env` の `ATHENA_OUTPUT_LOCATION` に設定：
+
+```ini
+ATHENA_OUTPUT_LOCATION=s3://iot-monitor-<account_id>/athena-results/
+```
+
+EC2 の IAM ロールに Athena / Glue / S3 の権限が付与されているため、Grafana コンテナは認証情報なしで Athena にアクセスできる。
+
+### 8. 設定ファイルをデプロイしてコンテナ起動
 
 ```powershell
 .\manage.ps1 deploy -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
@@ -208,8 +227,68 @@ ssh -i $HOME\.ssh\claude-monitoring.pem -p 2222 ec2-user@<IP>
 | `.\manage.ps1 stop` | EC2 停止 |
 | `.\manage.ps1 setup -KeyFile <pem>` | 初回のみ: docker/nginx/certbot インストール |
 | `.\manage.ps1 deploy -KeyFile <pem>` | 設定ファイル転送 + nginx 設定 + コンテナ起動 |
+| `.\manage.ps1 backup -KeyFile <pem>` | Docker ボリュームを S3 にバックアップ（コンテナを一時停止） |
+| `.\manage.ps1 restore -KeyFile <pem>` | S3 から最新バックアップをリストア |
+| `.\manage.ps1 restore -KeyFile <pem> -Timestamp <ts>` | S3 から指定タイムスタンプのバックアップをリストア |
 
 すべてのコマンドに `-Profile <name>` を付けると AWS プロファイルを指定できる。
+
+---
+
+## バックアップ＆リストア
+
+Docker ボリューム（Prometheus・Loki・Grafana のデータ）を S3 にバックアップする仕組みを用意している。EC2 の AMI 更新などで EC2 が replace される際に使う。
+
+### バックアップ
+
+```powershell
+.\manage.ps1 backup -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+```
+
+コンテナを一時停止してボリュームを tar.gz に固め、`s3://claude-monitoring-backup-<account_id>/volumes/<timestamp>/` にアップロードする。完了後にコンテナは自動的に再起動される。バックアップは 7 日間保持される。
+
+### リストア
+
+```powershell
+# 最新バックアップから復元
+.\manage.ps1 restore -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+
+# 特定タイムスタンプのバックアップから復元
+.\manage.ps1 restore -KeyFile $HOME\.ssh\claude-monitoring.pem -Timestamp 2026-05-16_120000 -Profile default
+```
+
+リストアは `deploy` の後に実行する（`docker-compose.yml` が EC2 上に存在する必要がある）。
+
+### EC2 replace が必要な場合の手順
+
+```powershell
+# 1. バックアップ
+.\manage.ps1 backup -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+
+# 2. terraform apply（EC2 が replace される）
+cd infra && .\tf.ps1 apply -Profile default && cd ..
+
+# 3. 新しい EC2 にセットアップ＆デプロイ
+.\manage.ps1 setup  -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+.\manage.ps1 deploy -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+
+# 4. リストア
+.\manage.ps1 restore -KeyFile $HOME\.ssh\claude-monitoring.pem -Profile default
+```
+
+---
+
+## AMI の固定
+
+`data.aws_ami.al2023` で `most_recent = true` を使っているため、Amazon Linux 2023 の最新 AMI が更新されると `terraform plan` で EC2 の replace が検出される。すぐに replace したくない場合は `terraform.tfvars` で AMI を固定できる。
+
+```hcl
+# infra/terraform.tfvars
+# plan で表示された現行 AMI ID を指定する
+ami_id = "ami-0a159d6b0ff6f12a1"
+```
+
+解除するときはこの行を削除して apply する（その際はバックアップを取ってから）。
 
 ---
 

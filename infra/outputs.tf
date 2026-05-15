@@ -37,3 +37,13 @@ output "subnet_id" {
   description = "EC2 が配置されているサブネット ID"
   value       = aws_instance.main.subnet_id
 }
+
+output "backup_bucket" {
+  description = "Docker ボリュームバックアップ用 S3 バケット名"
+  value       = aws_s3_bucket.backup.bucket
+}
+
+output "restore_test_ip" {
+  description = "リストアテスト用 EC2 インスタンスのパブリック IP"
+  value       = var.enable_restore_test ? aws_instance.restore_test[0].public_ip : null
+}

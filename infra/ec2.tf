@@ -91,13 +91,67 @@ resource "aws_iam_role_policy" "certbot_route53" {
   })
 }
 
+resource "aws_iam_role_policy" "athena_iot_monitor" {
+  name = "athena-iot-monitor"
+  role = aws_iam_role.ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "athena:StartQueryExecution",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:StopQueryExecution",
+          "athena:GetWorkGroup",
+          "athena:ListWorkGroups",
+        ]
+        Resource = [
+          "arn:aws:athena:ap-northeast-1:${data.aws_caller_identity.current.account_id}:workgroup/iot-monitor"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+        ]
+        Resource = [
+          "arn:aws:glue:ap-northeast-1:${data.aws_caller_identity.current.account_id}:catalog",
+          "arn:aws:glue:ap-northeast-1:${data.aws_caller_identity.current.account_id}:database/iot_monitor",
+          "arn:aws:glue:ap-northeast-1:${data.aws_caller_identity.current.account_id}:table/iot_monitor/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:PutObject",
+          "s3:GetBucketLocation",
+        ]
+        Resource = [
+          "arn:aws:s3:::iot-monitor-${data.aws_caller_identity.current.account_id}",
+          "arn:aws:s3:::iot-monitor-${data.aws_caller_identity.current.account_id}/*",
+        ]
+      },
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2" {
   name = "${var.project}-ec2"
   role = aws_iam_role.ec2.name
 }
 
 resource "aws_instance" "main" {
-  ami                    = data.aws_ami.al2023.id
+  ami                    = coalesce(var.ami_id, data.aws_ami.al2023.id)
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name
   subnet_id              = var.subnet_id
@@ -132,5 +186,37 @@ resource "aws_instance" "main" {
 
   tags = {
     Name = var.project
+  }
+}
+
+# ─── リストアテスト用インスタンス ────────────────────────────────────────────
+# 使い終わったら terraform.tfvars で enable_restore_test = false にして apply
+
+resource "aws_instance" "restore_test" {
+  count                  = var.enable_restore_test ? 1 : 0
+  ami                    = data.aws_ami.al2023.id
+  instance_type          = var.instance_type
+  key_name               = var.ssh_key_name
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.main.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2.name
+
+  associate_public_ip_address = true
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 20
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    sed -i 's/^#\?Port .*/Port ${var.ssh_port}/' /etc/ssh/sshd_config
+    systemctl restart sshd
+    mkdir -p /opt/claude-monitoring
+    chown ec2-user:ec2-user /opt/claude-monitoring
+  EOF
+
+  tags = {
+    Name = "${var.project}-restore-test"
   }
 }

@@ -60,3 +60,16 @@ variable "subnet_id" {
   default     = null
   nullable    = true
 }
+
+variable "ami_id" {
+  description = "EC2 に使用する AMI ID。指定時は data.aws_ami.al2023 より優先される（AMI を一時的に固定したい場合に使用）"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "enable_restore_test" {
+  description = "リストアテスト用 EC2 インスタンスを作成するか"
+  type        = bool
+  default     = false
+}

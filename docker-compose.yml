@@ -41,6 +41,12 @@ services:
   grafana:
     image: grafana/grafana:latest
     user: "1000:1000"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        grafana cli plugins install grafana-athena-datasource || true
+        exec /run.sh
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana

@@ -1,20 +1,31 @@
 #Requires -Version 5.1
 param(
   [Parameter(Mandatory=$true)]
-  [ValidateSet('start', 'stop', 'setup', 'deploy')]
+  [ValidateSet('start', 'stop', 'setup', 'deploy', 'backup', 'restore')]
   [string]$Action,
 
   [string]$Profile = '',
 
-  [string]$KeyFile = ''
+  [string]$KeyFile = '',
+
+  # Timestamp of backup to restore (default: latest)
+  [string]$Timestamp = '',
+
+  # Target instance: main (default) or restore_test
+  [ValidateSet('main', 'restore_test')]
+  [string]$Target = 'main'
 )
 
 # Usage:
-#   .\manage.ps1 start                              - Start EC2 and update Route53
-#   .\manage.ps1 stop                               - Stop EC2
-#   .\manage.ps1 setup  -KeyFile ~/.ssh/my-key.pem  - First-time EC2 setup (docker, nginx, certbot)
-#   .\manage.ps1 deploy -KeyFile ~/.ssh/my-key.pem  - Upload config files and start containers
-#   .\manage.ps1 start  -Profile myprofile          - Use specific AWS profile
+#   .\manage.ps1 start                                          - Start EC2 and update Route53
+#   .\manage.ps1 stop                                           - Stop EC2
+#   .\manage.ps1 setup   -KeyFile <pem>                        - First-time EC2 setup (docker, nginx, certbot)
+#   .\manage.ps1 deploy  -KeyFile <pem>                        - Upload config files and start containers
+#   .\manage.ps1 backup  -KeyFile <pem>                        - Backup Docker volumes to S3
+#   .\manage.ps1 restore -KeyFile <pem> [-Timestamp <ts>]      - Restore from S3
+#   .\manage.ps1 deploy  -KeyFile <pem> -Target restore_test   - Target restore-test instance
+#   .\manage.ps1 restore -KeyFile <pem> -Target restore_test   - Restore to restore-test instance
+#   .\manage.ps1 start   -Profile myprofile                    - Use specific AWS profile
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -50,6 +61,18 @@ function Get-InstanceIp([string]$InstanceId) {
     exit 1
   }
   return $ip
+}
+
+function Get-TargetIp([string]$Target) {
+  if ($Target -eq 'restore_test') {
+    $ip = Get-TfOutput 'restore_test_ip'
+    if ([string]::IsNullOrEmpty($ip) -or $ip -eq 'null') {
+      Write-Error "restore_test instance not found. Set enable_restore_test = true in terraform.tfvars and apply."
+      exit 1
+    }
+    return $ip
+  }
+  return Get-InstanceIp (Get-TfOutput 'instance_id')
 }
 
 if ($Action -eq 'start') {
@@ -115,7 +138,6 @@ elseif ($Action -eq 'stop') {
   Write-Host '==> Stopped.'
 }
 elseif ($Action -eq 'setup') {
-  $InstanceId    = Get-TfOutput 'instance_id'
   $Domain        = Get-TfOutput 'domain'
   $OtelEp        = Get-TfOutput 'otel_endpoint'
   $GrafanaUrl    = Get-TfOutput 'grafana_url'
@@ -128,7 +150,7 @@ elseif ($Action -eq 'setup') {
     exit 1
   }
 
-  $Ip    = Get-InstanceIp $InstanceId
+  $Ip    = Get-TargetIp $Target
   $Email = "admin@$Domain"
 
   Write-Host "==> EC2: $Ip (SSH port: $SshPort)"
@@ -150,7 +172,6 @@ elseif ($Action -eq 'setup') {
   Write-Host "    .\manage.ps1 deploy -KeyFile $KeyFile"
 }
 elseif ($Action -eq 'deploy') {
-  $InstanceId    = Get-TfOutput 'instance_id'
   $OtelEp        = Get-TfOutput 'otel_endpoint'
   $GrafanaUrl    = Get-TfOutput 'grafana_url'
   $SshPort       = Get-TfOutput 'ssh_port'
@@ -171,7 +192,7 @@ elseif ($Action -eq 'deploy') {
     exit 1
   }
 
-  $Ip = Get-InstanceIp $InstanceId
+  $Ip = Get-TargetIp $Target
 
   Write-Host "==> EC2: $Ip (SSH port: $SshPort)"
   Write-Host "==> OTel domain   : $OtelDomain"
@@ -179,20 +200,20 @@ elseif ($Action -eq 'deploy') {
   Write-Host ''
 
   Write-Host '==> Uploading config files...'
-  $Target = "ec2-user@${Ip}:/opt/claude-monitoring/"
+  $RemotePath = "ec2-user@${Ip}:/opt/claude-monitoring/"
   $SshOpt = @('-i', $KeyFile, '-o', 'StrictHostKeyChecking=no', '-P', $SshPort)
-  scp @SshOpt 'docker-compose.yml' $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt '.env'               $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt 'otelcol-config.yaml' $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt 'otel.htpasswd'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt -r 'prometheus'      $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt 'docker-compose.yml' $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt '.env'               $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt 'otelcol-config.yaml' $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt 'otel.htpasswd'      $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt -r 'prometheus'      $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   # grafana は古いファイルが残らないようディレクトリごと削除してから転送
   ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `
     'rm -rf /opt/claude-monitoring/grafana/'
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt -r 'grafana'         $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt -r 'nginx'           $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  scp @SshOpt -r 'loki'            $Target; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt -r 'grafana'         $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt -r 'nginx'           $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  scp @SshOpt -r 'loki'            $RemotePath; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # nginx 設定：ドメイン名を置換して /etc/nginx/conf.d/ に配置
   Write-Host '==> Configuring nginx...'
@@ -210,4 +231,55 @@ elseif ($Action -eq 'deploy') {
   Write-Host '==> Deploy complete.'
   Write-Host "    Grafana : https://$GrafanaDomain"
   Write-Host "    OTel EP : https://$OtelDomain"
+}
+elseif ($Action -eq 'backup') {
+  $SshPort      = Get-TfOutput 'ssh_port'
+  $BackupBucket = Get-TfOutput 'backup_bucket'
+
+  if ([string]::IsNullOrEmpty($KeyFile)) {
+    Write-Error "Specify -KeyFile. Example: .\manage.ps1 backup -KeyFile ~/.ssh/my-key.pem"
+    exit 1
+  }
+
+  $Ip = Get-TargetIp $Target
+  Write-Host "==> EC2: $Ip (SSH port: $SshPort)"
+  Write-Host "==> Backup bucket: $BackupBucket"
+  Write-Host ''
+
+  Write-Host '==> Uploading backup.sh...'
+  scp -i $KeyFile -o StrictHostKeyChecking=no -P $SshPort scripts/backup.sh "ec2-user@${Ip}:/tmp/backup.sh"
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  Write-Host '==> Running backup (containers will stop briefly)...'
+  ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `
+    "bash /tmp/backup.sh $BackupBucket"
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+elseif ($Action -eq 'restore') {
+  $SshPort      = Get-TfOutput 'ssh_port'
+  $BackupBucket = Get-TfOutput 'backup_bucket'
+
+  if ([string]::IsNullOrEmpty($KeyFile)) {
+    Write-Error "Specify -KeyFile. Example: .\manage.ps1 restore -KeyFile ~/.ssh/my-key.pem"
+    exit 1
+  }
+
+  $Ip = Get-TargetIp $Target
+  Write-Host "==> EC2: $Ip (SSH port: $SshPort)"
+  Write-Host "==> Backup bucket: $BackupBucket"
+  if ($Timestamp) {
+    Write-Host "==> Timestamp: $Timestamp"
+  } else {
+    Write-Host "==> Timestamp: (latest)"
+  }
+  Write-Host ''
+
+  Write-Host '==> Uploading restore.sh...'
+  scp -i $KeyFile -o StrictHostKeyChecking=no -P $SshPort scripts/restore.sh "ec2-user@${Ip}:/tmp/restore.sh"
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  Write-Host '==> Running restore...'
+  ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `
+    "bash /tmp/restore.sh $BackupBucket $Timestamp"
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
