@@ -122,7 +122,7 @@
           "refId": "A"
         }
       ],
-      "title": "Ah グラフ",
+      "title": "充電量",
       "type": "timeseries"
     },
     {
@@ -233,7 +233,7 @@
           "refId": "A"
         }
       ],
-      "title": "電圧グラフ",
+      "title": "バッテリ電圧",
       "type": "timeseries"
     },
     {
@@ -347,7 +347,7 @@
           "refId": "A"
         }
       ],
-      "title": "Ah グラフ",
+      "title": "充放電流",
       "type": "timeseries"
     },
     {
@@ -450,7 +450,7 @@
           "refId": "A"
         }
       ],
-      "title": "温度グラフ",
+      "title": "温度",
       "type": "timeseries"
     },
     {
@@ -554,7 +554,7 @@
           "refId": "A"
         }
       ],
-      "title": "湿度グラフ",
+      "title": "湿度",
       "type": "timeseries"
     }
   ],
@@ -573,6 +573,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
