@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/karuru/git_repos/car-iot-services/infra/**)",
-      "Read(//c/Users/karuru/git_repos/car-iot-services/**)"
+      "Read(//c/Users/karuru/git_repos/car-iot-services/**)",
+      "Skill(commit)",
+      "Skill(commit:*)"
     ]
   }
 }
