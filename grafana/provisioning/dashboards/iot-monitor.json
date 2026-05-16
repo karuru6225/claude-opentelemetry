@@ -64,6 +64,7 @@
               "mode": "off"
             }
           },
+          "decimals": 1,
           "fieldMinMax": false,
           "mappings": [],
           "thresholds": {
@@ -291,8 +292,12 @@
                 "value": 0
               },
               {
+                "color": "dark-red",
+                "value": -20
+              },
+              {
                 "color": "orange",
-                "value": -0.1
+                "value": -2
               },
               {
                 "color": "green",
@@ -300,7 +305,11 @@
               },
               {
                 "color": "blue",
-                "value": 0.1
+                "value": 2
+              },
+              {
+                "color": "dark-blue",
+                "value": 20
               }
             ]
           },
@@ -314,7 +323,7 @@
         "x": 0,
         "y": 10
       },
-      "id": 5,
+      "id": 6,
       "options": {
         "legend": {
           "calcs": [],
@@ -343,7 +352,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' Ah' AS metric,\n  ah - LAG(ah, 1) OVER (PARTITION BY device_id order by ts)\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0)\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC\n",
           "refId": "A"
         }
       ],
