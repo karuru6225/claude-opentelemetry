@@ -119,7 +119,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' Ah' AS metric,\n  ah AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' Ah' AS metric,\n  ah AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -230,7 +230,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' main(V)' AS metric,\n  main AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' sub(V)' AS metric,\n  sub AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' main(V)' AS metric,\n  main AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' sub(V)' AS metric,\n  sub AS value\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -352,7 +352,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0)\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC\n",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0)\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n",
           "refId": "A"
         }
       ],
@@ -455,7 +455,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -559,7 +559,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -572,7 +572,20 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": ["esp32-gw-aca7043d0a8c"],
+          "value": ["esp32-gw-aca7043d0a8c"]
+        },
+        "multi": true,
+        "name": "target_devices",
+        "options": [],
+        "query": "esp32-gw-aca7043d0a8c, esp32-gw-e072a1e60480",
+        "type": "custom",
+        "valuesFormat": "csv"
+      }
+    ]
   },
   "time": {
     "from": "now-24h",
@@ -582,6 +595,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 6,
+  "version": 7,
   "weekStart": ""
 }
