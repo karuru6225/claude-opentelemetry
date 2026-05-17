@@ -204,8 +204,8 @@
       "id": 1,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
@@ -595,6 +595,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 7,
+  "version": 8,
   "weekStart": ""
 }
