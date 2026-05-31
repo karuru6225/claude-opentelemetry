@@ -455,7 +455,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -559,7 +559,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -595,6 +595,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 13,
+  "version": 14,
   "weekStart": ""
 }
