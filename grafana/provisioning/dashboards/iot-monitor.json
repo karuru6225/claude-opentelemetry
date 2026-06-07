@@ -214,6 +214,34 @@
                 "id": "decimals"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "A V main(V)"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "dark-blue",
+                      "value": 0
+                    },
+                    {
+                      "color": "dark-green",
+                      "value": 12.1
+                    },
+                    {
+                      "color": "dark-red",
+                      "value": 14
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       },
@@ -633,6 +661,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 14,
+  "version": 15,
   "weekStart": ""
 }
