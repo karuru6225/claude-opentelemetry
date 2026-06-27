@@ -44,6 +44,42 @@ certbot certonly \
   -d "$GRAFANA_DOMAIN"
 
 echo "==> Certificates issued."
+
+# 証明書の自動更新（systemd timer + service）
+# Amazon Linux 2023 には cron が無く、pip 版 certbot は標準の certbot.timer を
+# 同梱しないため、自前で timer/service を登録する。
+# renew は期限 30 日前のものだけ更新するので 1 日 2 回実行で問題ない（公式推奨）。
+# --deploy-hook で更新成功時のみ nginx を reload し、新しい証明書を読み直させる。
+CERTBOT_BIN="$(command -v certbot)"
+
+cat > /etc/systemd/system/certbot-renew.service <<EOF
+[Unit]
+Description=Certbot renewal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=${CERTBOT_BIN} renew --quiet --deploy-hook "systemctl reload nginx"
+EOF
+
+cat > /etc/systemd/system/certbot-renew.timer <<'EOF'
+[Unit]
+Description=Run certbot renew twice daily
+
+[Timer]
+OnCalendar=*-*-* 00,12:00:00
+RandomizedDelaySec=3600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now certbot-renew.timer
+
+echo "==> Auto-renewal timer enabled (certbot-renew.timer)."
 echo "==> Next steps:"
 echo "    1. Deploy config files to /opt/claude-monitoring"
 echo "    2. Run: .\manage.ps1 deploy -KeyFile <key>"
