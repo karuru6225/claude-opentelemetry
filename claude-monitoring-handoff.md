@@ -139,6 +139,28 @@ deploy 時に `grafana/` ディレクトリをリモートで一度削除して�
 
 Collector 再起動直後に Prometheus への remote write が 503 になることがある。retry で自動回復するため放置でよい。
 
+### 証明書失効で Grafana がアプリファイルを読めない（ERR_CERT_DATE_INVALID）
+
+**症状**: Grafana が `ChunkLoadError` → "Grafana has failed to load its application files" を表示。DevTools の Network で CSS/JS が軒並み `net::ERR_CERT_DATE_INVALID` で失敗している。
+
+**原因**: Let's Encrypt 証明書の失効。nginx が期限切れの証明書を握っているため、HTML（キャッシュから表示される）は出るが後続アセットの取得が全て TLS で弾かれる。Grafana 本体やビルド成果物は無関係。
+
+**確認**:
+
+```bash
+echo | openssl s_client -connect grafana.<domain>:443 -servername grafana.<domain> 2>/dev/null \
+  | openssl x509 -noout -dates   # notAfter が過去なら失効
+```
+
+**復旧**:
+
+```bash
+certbot renew            # 期限切れなら更新（dns-route53 認証は自動）
+systemctl reload nginx   # 新しい証明書を読み直させる
+```
+
+→ ブラウザをスーパーリロード（Ctrl/Cmd+Shift+R）で復活。詳細は「インフラ管理 → TLS 証明書」を参照。
+
 ---
 
 ## インフラ管理
@@ -155,6 +177,22 @@ Collector 再起動直後に Prometheus への remote write が 503 になるこ
 - ポート: 2222
 - キーペア: `claude-monitoring`
 - Terraform の `ssh_open` 変数で Security Group を開閉
+
+### TLS 証明書
+
+- 取得・更新とも Let's Encrypt + certbot（`--dns-route53` DNS チャレンジ）。EC2 の IAM ロールで Route53 を操作するため、IP が起動のたびに変わっても更新可能（HTTP-01 と違いポート 80 開放不要）。
+- `setup.sh` が初回に証明書取得と**自動更新タイマーの登録**まで行う。Amazon Linux 2023 は cron 非搭載・pip 版 certbot は標準 timer を同梱しないため、`certbot-renew.{service,timer}` を自前で登録している（1 日 2 回チェック、期限 30 日前のものだけ更新）。更新成功時は `--deploy-hook` で nginx を reload。
+
+確認・運用コマンド：
+
+```bash
+systemctl list-timers | grep certbot          # 次回実行予定の確認
+journalctl -u certbot-renew --no-pager | tail  # 更新ログ
+certbot certificates                           # 各証明書の有効期限一覧
+certbot renew --dry-run                         # 更新経路の疎通テスト（発行はしない）
+```
+
+> 自動更新が登録されていないと 90 日で失効し、Grafana/otel が ERR_CERT_DATE_INVALID で全滅する（「既知のハマりポイント」参照）。`list-timers` に `certbot-renew.timer` が出ていることを時々確認しておくと安心。
 
 ### Terraform
 
