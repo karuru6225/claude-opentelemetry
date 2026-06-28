@@ -335,7 +335,8 @@
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "type": "linear"
+              "log": 2,
+              "type": "symlog"
             },
             "showPoints": "auto",
             "showValues": false,
@@ -661,6 +662,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 15,
+  "version": 16,
   "weekStart": ""
 }
