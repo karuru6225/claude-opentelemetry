@@ -82,7 +82,74 @@
           },
           "unit": "amph"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "percent"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "semi-dark-red",
+                      "value": 0
+                    },
+                    {
+                      "color": "orange",
+                      "value": 10
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 35
+                    },
+                    {
+                      "color": "green",
+                      "value": 75
+                    },
+                    {
+                      "color": "blue",
+                      "value": 90
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 22
+              },
+              {
+                "id": "custom.gradientMode",
+                "value": "scheme"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -119,7 +186,7 @@
             "uid": "athena-iot-monitor"
           },
           "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max_value,\n  ah AS Ah\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
+          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max_value,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -323,7 +390,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 20,
             "gradientMode": "scheme",
             "hideFrom": {
               "legend": false,
@@ -662,6 +729,6 @@
   "timezone": "browser",
   "title": "IoT モニター",
   "uid": "iot-monitor",
-  "version": 16,
+  "version": 19,
   "weekStart": ""
 }
