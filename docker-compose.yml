@@ -61,5 +61,11 @@ services:
 
 volumes:
   prometheus_data:
+    external: true
+    name: claude-monitoring_prometheus_data
   loki_data:
+    external: true
+    name: claude-monitoring_loki_data
   grafana_data:
+    external: true
+    name: claude-monitoring_grafana_data
