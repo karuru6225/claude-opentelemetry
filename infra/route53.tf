@@ -1,7 +1,15 @@
-# Route53 ホストゾーンは data source として参照するのみ
-# A レコードは manage.ps1 start で動的に更新する（EC2 起動のたびに IP が変わるため）
-#
-# ドメイン情報は outputs.tf から参照できる:
-#   terraform output domain          → ベースドメイン
-#   terraform output otel_endpoint   → OTel Collector エンドポイント
-#   terraform output grafana_url     → Grafana URL
+resource "aws_route53_record" "otel" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = local.otel_domain
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.main.public_ip]
+}
+
+resource "aws_route53_record" "grafana" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = local.grafana_domain
+  type    = "A"
+  ttl     = 300
+  records = [aws_eip.main.public_ip]
+}

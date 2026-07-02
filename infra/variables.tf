@@ -73,3 +73,21 @@ variable "enable_restore_test" {
   type        = bool
   default     = false
 }
+
+variable "enable_instance_schedule" {
+  description = "EventBridge Scheduler でインスタンスの自動停止・起動を有効にするか"
+  type        = bool
+  default     = false
+}
+
+variable "instance_stop_cron" {
+  description = "インスタンス停止スケジュール（cron 式・JST）例: cron(0 2 * * ? *) = 毎日 02:00 JST"
+  type        = string
+  default     = "cron(0 2 * * ? *)"
+}
+
+variable "instance_start_cron" {
+  description = "インスタンス起動スケジュール（cron 式・JST）例: cron(0 9 * * ? *) = 毎日 09:00 JST"
+  type        = string
+  default     = "cron(0 9 * * ? *)"
+}

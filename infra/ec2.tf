@@ -170,7 +170,7 @@ resource "aws_instance" "main" {
 
   root_block_device {
     volume_type = "gp3"
-    volume_size = 20
+    volume_size = 30
   }
 
   user_data = <<-EOF
@@ -183,6 +183,15 @@ resource "aws_instance" "main" {
     mkdir -p /opt/claude-monitoring
     chown ec2-user:ec2-user /opt/claude-monitoring
   EOF
+
+  tags = {
+    Name = var.project
+  }
+}
+
+resource "aws_eip" "main" {
+  domain   = "vpc"
+  instance = aws_instance.main.id
 
   tags = {
     Name = var.project

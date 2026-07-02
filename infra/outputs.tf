@@ -4,8 +4,13 @@ output "instance_id" {
 }
 
 output "hosted_zone_id" {
-  description = "Route53 ホストゾーン ID（manage.ps1 start で Route53 更新に使用）"
+  description = "Route53 ホストゾーン ID"
   value       = data.aws_route53_zone.main.zone_id
+}
+
+output "public_ip" {
+  description = "EC2 インスタンスのパブリック IP（EIP で固定）"
+  value       = aws_eip.main.public_ip
 }
 
 output "domain" {

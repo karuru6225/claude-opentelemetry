@@ -76,11 +76,9 @@ function Get-TargetIp([string]$Target) {
 }
 
 if ($Action -eq 'start') {
-  $InstanceId   = Get-TfOutput 'instance_id'
-  $HostedZoneId = Get-TfOutput 'hosted_zone_id'
-  $Domain       = Get-TfOutput 'domain'
-  $OtelSub      = (terraform -chdir=infra output -raw otel_endpoint 2>$null) -replace 'https://', '' -replace "\.$Domain", ''
-  $GrafanaSub   = (terraform -chdir=infra output -raw grafana_url 2>$null) -replace 'https://', '' -replace "\.$Domain", ''
+  $InstanceId = Get-TfOutput 'instance_id'
+  $OtelEp     = Get-TfOutput 'otel_endpoint'
+  $GrafanaUrl = Get-TfOutput 'grafana_url'
 
   Write-Host "==> Starting EC2: $InstanceId"
   aws ec2 start-instances --instance-ids $InstanceId | Out-Null
@@ -90,44 +88,10 @@ if ($Action -eq 'start') {
   aws ec2 wait instance-running --instance-ids $InstanceId
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  $NewIp = aws ec2 describe-instances `
-    --instance-ids $InstanceId `
-    --query 'Reservations[0].Instances[0].PublicIpAddress' `
-    --output text
-  Write-Host "==> Public IP: $NewIp"
-
-  $TmpJson = [System.IO.Path]::GetTempFileName()
-  foreach ($Sub in @($OtelSub, $GrafanaSub)) {
-    $Fqdn = "$Sub.$Domain"
-    Write-Host "==> Updating Route53: $Fqdn -> $NewIp"
-
-    @{
-      Changes = @(@{
-        Action = 'UPSERT'
-        ResourceRecordSet = @{
-          Name            = $Fqdn
-          Type            = 'A'
-          TTL             = 60
-          ResourceRecords = @(@{ Value = $NewIp })
-        }
-      })
-    } | ConvertTo-Json -Depth 10 | ForEach-Object { [System.IO.File]::WriteAllText($TmpJson, $_) }
-
-    aws route53 change-resource-record-sets `
-      --hosted-zone-id $HostedZoneId `
-      --change-batch "file://$TmpJson" | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      Remove-Item $TmpJson -ErrorAction SilentlyContinue
-      Write-Error "Route53 update failed: $Fqdn"
-      exit 1
-    }
-  }
-  Remove-Item $TmpJson -ErrorAction SilentlyContinue
-
   Write-Host ''
-  Write-Host '==> Done. DNS propagation may take up to 60 seconds.'
-  Write-Host "    Grafana : https://$GrafanaSub.$Domain"
-  Write-Host "    OTel EP : https://$OtelSub.$Domain"
+  Write-Host '==> Done.'
+  Write-Host "    Grafana : $GrafanaUrl"
+  Write-Host "    OTel EP : $OtelEp"
 }
 elseif ($Action -eq 'stop') {
   $InstanceId = Get-TfOutput 'instance_id'
