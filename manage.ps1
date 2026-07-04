@@ -185,6 +185,12 @@ elseif ($Action -eq 'deploy') {
     "sed 's/`${OTEL_DOMAIN}/$OtelDomain/g; s/`${GRAFANA_DOMAIN}/$GrafanaDomain/g' /opt/claude-monitoring/nginx/nginx.conf | sudo tee /etc/nginx/conf.d/claude-monitoring.conf > /dev/null && sudo nginx -t && sudo systemctl reload nginx"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+  # external volume が存在しない場合のみ作成（restore 後は既存ボリュームをそのまま使う）
+  Write-Host '==> Ensuring Docker volumes exist...'
+  ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `
+    'for v in claude-monitoring_prometheus_data claude-monitoring_loki_data claude-monitoring_grafana_data; do docker volume inspect $v > /dev/null 2>&1 || docker volume create $v; done'
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   # docker compose 起動 + 設定変更を反映するため再起動
   Write-Host '==> Starting and restarting containers...'
   ssh -i $KeyFile -o StrictHostKeyChecking=no -p $SshPort "ec2-user@$Ip" `

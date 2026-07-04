@@ -37,6 +37,13 @@ services:
     ports:
       - "127.0.0.1:3100:3100"
     restart: unless-stopped
+    blkio_config:
+      device_read_bps:
+        - path: /dev/nvme0n1
+          rate: '30mb'
+      device_write_bps:
+        - path: /dev/nvme0n1
+          rate: '10mb'
 
   grafana:
     image: grafana/grafana:latest
