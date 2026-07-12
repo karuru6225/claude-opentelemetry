@@ -8,7 +8,14 @@
  * ボタン操作（M5.BtnA、本体前面ボタン）:
  *   1〜3秒 長押し → EC2 start
  *   3秒以上 長押し → EC2 stop
+ *
+ * 表示: HAS_DISPLAY の定義有無で切り替える。
+ *   定義あり（デフォルト、AtomS3無印用） : 内蔵ディスプレイに表示
+ *   定義なし（AtomS3 Lite等、ディスプレイ非搭載機用）: RGB LEDの色で表示
+ *   ディスプレイが無い機体で一時的に動かす場合は下の #define をコメントアウトする
  */
+
+// #define HAS_DISPLAY
 
 #include <M5Unified.h>
 #include <BH1750.h>
@@ -16,6 +23,15 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include "config.h"
+
+#ifndef HAS_DISPLAY
+// M5UnifiedのM5.Led APIはAtomS3 Liteでは既知の不具合でRMT初期化に失敗するため
+// (https://github.com/m5stack/M5Unified/issues/178)、Adafruit_NeoPixelで
+// GPIO35のRGB LEDを直接制御する
+#include <Adafruit_NeoPixel.h>
+static const uint8_t RGB_LED_PIN = 35;
+Adafruit_NeoPixel pixel(1, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
+#endif
 
 static const uint8_t BH1750_ADDR = 0x23;
 static const uint32_t READ_INTERVAL_MS = 1000;
@@ -43,6 +59,7 @@ WiFiClientSecure secureClient;
 
 void showBtnFeedback(BtnFeedback fb)
 {
+#ifdef HAS_DISPLAY
   M5.Display.fillScreen(BLACK);
   M5.Display.setCursor(0, 0);
   switch (fb)
@@ -62,11 +79,31 @@ void showBtnFeedback(BtnFeedback fb)
   default:
     break;
   }
+#else
+  // ディスプレイが無い機体（AtomS3 Lite等）ではRGB LEDの色でボタン状態を表す
+  switch (fb)
+  {
+  case BtnFeedback::Holding:
+    pixel.setPixelColor(0, pixel.Color(40, 40, 40)); // 白（弱め）
+    break;
+  case BtnFeedback::ReadyStart:
+    pixel.setPixelColor(0, pixel.Color(0, 120, 0)); // 緑
+    break;
+  case BtnFeedback::ReadyStop:
+    pixel.setPixelColor(0, pixel.Color(120, 0, 0)); // 赤
+    break;
+  default:
+    pixel.setPixelColor(0, pixel.Color(0, 0, 0)); // 消灯
+    break;
+  }
+  pixel.show();
+#endif
 }
 
 void connectWiFi()
 {
-  if (WiFi.status() == WL_CONNECTED) return;
+  if (WiFi.status() == WL_CONNECTED)
+    return;
 
   Serial.printf("[WiFi] %s に接続中...\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
@@ -118,10 +155,18 @@ bool callEc2Api(const char *action)
   Serial.printf("[EC2] POST /ec2/%s -> %d: %s\n", action, statusCode, body.c_str());
 
   bool ok = (statusCode == 200);
+#ifdef HAS_DISPLAY
   M5.Display.fillScreen(BLACK);
   M5.Display.setCursor(0, 0);
   M5.Display.setTextColor(WHITE, BLACK);
   M5.Display.printf("%s %s", action, ok ? "OK" : "NG");
+#else
+  pixel.setPixelColor(0, ok ? pixel.Color(0, 120, 0) : pixel.Color(120, 0, 0)); // 成功=緑、失敗=赤
+  pixel.show();
+  delay(1500); // 結果を一定時間表示してから消灯に戻す
+  pixel.setPixelColor(0, pixel.Color(0, 0, 0));
+  pixel.show();
+#endif
 
   return ok;
 }
@@ -132,10 +177,37 @@ void setup()
   cfg.serial_baudrate = 115200; // 未指定だとM5.begin()がSerial.begin()を呼ばない
   M5.begin(cfg);
 
+#ifdef HAS_DISPLAY
   M5.Display.setRotation(0);
   M5.Display.setTextSize(2);
   M5.Display.setTextColor(WHITE, BLACK);
   M5.Display.fillScreen(BLACK);
+#else
+  pixel.begin();
+  pixel.setBrightness(60); // フル輝度だと眩しいため抑える
+  pixel.setPixelColor(0, pixel.Color(0, 0, 0));
+  pixel.show();
+
+  // LED自己診断: 各色を順番に光らせて動作確認する
+  struct
+  {
+    const char *name;
+    uint8_t r, g, b;
+  } ledTestPatterns[] = {
+      {"白", 40, 40, 40},
+      {"緑", 0, 120, 0},
+      {"赤", 120, 0, 0},
+      {"青", 0, 0, 120},
+      {"消灯", 0, 0, 0},
+  };
+  for (auto &p : ledTestPatterns)
+  {
+    Serial.printf("[LED] 自己診断: %s\n", p.name);
+    pixel.setPixelColor(0, pixel.Color(p.r, p.g, p.b));
+    pixel.show();
+    delay(600);
+  }
+#endif
 
   // M5Unified の Ex_I2C は Arduino Wire と互換性がないため、
   // ピン番号だけ取得して標準の Wire を GROVE ポート用に初期化する
@@ -144,8 +216,10 @@ void setup()
   if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, BH1750_ADDR, &Wire))
   {
     Serial.println("[BH1750] センサーが見つかりません");
+#ifdef HAS_DISPLAY
     M5.Display.setCursor(0, 0);
     M5.Display.println("Sensor NG");
+#endif
   }
 
   connectWiFi();
@@ -169,7 +243,7 @@ void loop()
     uint32_t heldMs = millis() - btnPressStartMs;
     BtnFeedback fb = (heldMs >= BTN_STOP_MIN_MS)    ? BtnFeedback::ReadyStop
                      : (heldMs >= BTN_START_MIN_MS) ? BtnFeedback::ReadyStart
-                                                     : BtnFeedback::Holding;
+                                                    : BtnFeedback::Holding;
     if (fb != lastBtnFeedback)
     {
       lastBtnFeedback = fb;
@@ -218,8 +292,10 @@ void loop()
 
   Serial.printf("照度: %.1f lux\n", lux);
 
+#ifdef HAS_DISPLAY
   M5.Display.fillScreen(BLACK);
   M5.Display.setCursor(0, 0);
   M5.Display.setTextColor(WHITE, BLACK);
   M5.Display.printf("%.0f lx", lux);
+#endif
 }
