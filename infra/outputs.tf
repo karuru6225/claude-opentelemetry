@@ -52,3 +52,8 @@ output "restore_test_ip" {
   description = "リストアテスト用 EC2 インスタンスのパブリック IP"
   value       = var.enable_restore_test ? aws_instance.restore_test[0].public_ip : null
 }
+
+output "ec2_control_api_endpoint" {
+  description = "EC2 start/stop API のベースURL（M5AtomS3の config.h に設定する）"
+  value       = var.enable_ec2_control ? aws_apigatewayv2_api.ec2_control[0].api_endpoint : null
+}

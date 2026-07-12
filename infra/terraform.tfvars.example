@@ -17,3 +17,7 @@ ssh_key_name      = "my-key"                  # EC2 キーペア名
 # otel_subdomain    = "otel"
 # grafana_subdomain = "grafana"
 # instance_type     = "t3.micro"
+
+# EC2 start/stop API（M5AtomS3 等から呼び出す。今回は疎通確認までのスコープ）
+# enable_ec2_control        = true
+# ec2_control_shared_secret = "change-me-to-a-random-32-char-string"

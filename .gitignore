@@ -10,6 +10,10 @@ infra/.terraform.lock.hcl
 infra/tfplan
 infra/*.tfstate
 infra/*.tfstate.backup
+infra/.build/
+
+# M5AtomS3 環境光センサー
+m5atoms3_ambient_light/src/config.h
 
 # macOS
 .DS_Store

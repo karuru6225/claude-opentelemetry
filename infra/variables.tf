@@ -91,3 +91,17 @@ variable "instance_start_cron" {
   type        = string
   default     = "cron(0 9 * * ? *)"
 }
+
+variable "enable_ec2_control" {
+  description = "M5AtomS3等からAPI Gateway + Lambda経由でEC2をstart/stopできる仕組みを有効にするか"
+  type        = bool
+  default     = false
+}
+
+variable "ec2_control_shared_secret" {
+  description = "EC2 start/stop API 認証用の共有シークレット（HTTPヘッダーで送信、16文字以上）"
+  type        = string
+  default     = null
+  nullable    = true
+  sensitive   = true
+}
