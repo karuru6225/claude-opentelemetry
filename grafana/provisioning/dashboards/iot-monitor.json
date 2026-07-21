@@ -283,7 +283,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max_value,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent,\n  ROUND(ah / ${divisor_amp} * 12) * 5 * 60 AS remaining\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -423,6 +423,30 @@
                       {
                         "id": "custom.gradientMode",
                         "value": "scheme"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "remaining"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dthms"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "hidden"
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": true
+                        }
                       }
                     ]
                   }
@@ -847,133 +871,6 @@
             "version": "13.1.0"
           }
         }
-      },
-      "panel-7": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "athena-iot-monitor"
-                      },
-                      "group": "grafana-athena-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "connectionArgs": {
-                          "catalog": "__default",
-                          "database": "__default",
-                          "region": "__default",
-                          "resultReuseEnabled": false,
-                          "resultReuseMaxAgeInMinutes": 60
-                        },
-                        "format": 2,
-                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  -- device_id || ' Ah' AS metric,\r\n  ROUND(ah / 14 * 12) * 5 * 60 AS \"h@14A\",\r\n  ROUND(ah / 30 * 12) * 5 * 60 AS \"h@30A\"\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "",
-          "id": 7,
-          "links": [],
-          "title": "残り時間",
-          "vizConfig": {
-            "group": "bargauge",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "continuous-GrYlRd"
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      }
-                    ]
-                  },
-                  "unit": "dthms"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "h@14A",
-                      "scope": "series"
-                    },
-                    "properties": [
-                      {
-                        "id": "max",
-                        "value": 51429
-                      },
-                      {
-                        "id": "min",
-                        "value": 0
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "h@30A",
-                      "scope": "series"
-                    },
-                    "properties": [
-                      {
-                        "id": "max",
-                        "value": 24000
-                      },
-                      {
-                        "id": "min",
-                        "value": 0
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "displayMode": "basic",
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "overflow": "ellipsis",
-                  "placement": "bottom",
-                  "showLegend": false
-                },
-                "maxVizHeight": 300,
-                "minVizHeight": 16,
-                "minVizWidth": 8,
-                "namePlacement": "auto",
-                "orientation": "horizontal",
-                "reduceOptions": {
-                  "calcs": ["lastNotNull"],
-                  "fields": "",
-                  "values": false
-                },
-                "showUnfilled": true,
-                "sizing": "auto",
-                "valueMode": "color"
-              }
-            },
-            "version": "13.1.0"
-          }
-        }
       }
     },
     "layout": {
@@ -1011,19 +908,6 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-7"
-              },
-              "height": 3,
-              "width": 12,
-              "x": 0,
-              "y": 10
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-3"
               },
               "height": 10,
@@ -1042,7 +926,7 @@
               "height": 10,
               "width": 12,
               "x": 0,
-              "y": 13
+              "y": 10
             }
           },
           {
@@ -1101,6 +985,24 @@
           "name": "target_devices",
           "options": [],
           "query": "esp32-gw-aca7043d0a8c, esp32-gw-e072a1e60480",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "14",
+            "value": "14"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "multi": false,
+          "name": "divisor_amp",
+          "options": [],
+          "query": "1, 4, 14, 30",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
