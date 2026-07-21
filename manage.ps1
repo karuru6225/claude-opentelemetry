@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 param(
   [Parameter(Mandatory=$true)]
-  [ValidateSet('start', 'stop', 'setup', 'deploy', 'backup', 'restore')]
+  [ValidateSet('start', 'stop', 'setup', 'deploy', 'backup', 'restore', 'reset-host-key')]
   [string]$Action,
 
   [string]$Profile = '',
@@ -26,6 +26,7 @@ param(
 #   .\manage.ps1 deploy  -KeyFile <pem> -Target restore_test   - Target restore-test instance
 #   .\manage.ps1 restore -KeyFile <pem> -Target restore_test   - Restore to restore-test instance
 #   .\manage.ps1 start   -Profile myprofile                    - Use specific AWS profile
+#   .\manage.ps1 reset-host-key                                 - Remove stale SSH known_hosts entry for EC2
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -100,6 +101,15 @@ elseif ($Action -eq 'stop') {
   aws ec2 stop-instances --instance-ids $InstanceId | Out-Null
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   Write-Host '==> Stopped.'
+}
+elseif ($Action -eq 'reset-host-key') {
+  $SshPort = Get-TfOutput 'ssh_port'
+  $Ip      = Get-TargetIp $Target
+
+  Write-Host "==> Removing known_hosts entries for $Ip (port $SshPort)"
+  ssh-keygen -R "[$Ip]:$SshPort"
+  ssh-keygen -R $Ip
+  Write-Host '==> Done.'
 }
 elseif ($Action -eq 'setup') {
   $Domain        = Get-TfOutput 'domain'

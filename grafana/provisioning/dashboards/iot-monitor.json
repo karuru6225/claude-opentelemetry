@@ -1,734 +1,1110 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "links": [],
-  "panels": [
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "athena-iot-monitor"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 1,
-          "fieldMinMax": false,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "amph"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "percent"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "semi-dark-red",
-                      "value": 0
-                    },
-                    {
-                      "color": "orange",
-                      "value": 10
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 35
-                    },
-                    {
-                      "color": "green",
-                      "value": 75
-                    },
-                    {
-                      "color": "blue",
-                      "value": 90
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 22
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "scheme"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max_value,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
-          "refId": "A"
-        }
-      ],
-      "title": "充電量",
-      "type": "timeseries"
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "iot-monitor",
+    "namespace": "default",
+    "uid": "462c7fe7-b3e9-4af5-88bc-d3d12c6bfd4d",
+    "resourceVersion": "1784622705077992",
+    "generation": 3,
+    "creationTimestamp": "2026-07-04T11:31:09Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "1713189446529024"
     },
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "athena-iot-monitor"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "decimals": 2,
-          "mappings": [],
-          "max": 15,
-          "min": 11,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 12.1
-              },
-              {
-                "color": "red",
-                "value": 14
-              }
-            ]
-          },
-          "unit": "volt"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "B V"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "min"
-              },
-              {
-                "id": "max"
-              },
-              {
-                "id": "decimals"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "A V main(V)"
-            },
-            "properties": [
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "dark-blue",
-                      "value": 0
-                    },
-                    {
-                      "color": "dark-green",
-                      "value": 12.1
-                    },
-                    {
-                      "color": "dark-red",
-                      "value": 14
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'main(V)' AS metric,\n  main AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'sub(V)' AS metric,\n  sub AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
-          "refId": "A"
-        },
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 1,
-          "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  'sub-main(V)' AS metric,\r\n  sub - main AS V\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC\r\n",
-          "refId": "B"
-        }
-      ],
-      "title": "バッテリ電圧",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "athena-iot-monitor"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds",
-            "seriesBy": "last"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": true,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "symlog"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "fieldMinMax": false,
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": 0
-              },
-              {
-                "color": "dark-red",
-                "value": -20
-              },
-              {
-                "color": "orange",
-                "value": -2
-              },
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "blue",
-                "value": 2
-              },
-              {
-                "color": "dark-blue",
-                "value": 20
-              }
-            ]
-          },
-          "unit": "amp"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 10
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n",
-          "refId": "A"
-        }
-      ],
-      "title": "充放電流",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "athena-iot-monitor"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-BlYlRd"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "scheme",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "fieldMinMax": false,
-          "mappings": [],
-          "max": 50,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "celsius"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 10
-      },
-      "id": 3,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
-          "refId": "A"
-        }
-      ],
-      "title": "温度",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "grafana-athena-datasource",
-        "uid": "athena-iot-monitor"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "humidity"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "connectionArgs": {
-            "catalog": "__default",
-            "database": "__default",
-            "region": "__default",
-            "resultReuseEnabled": true,
-            "resultReuseMaxAgeInMinutes": 60
-          },
-          "datasource": {
-            "type": "grafana-athena-datasource",
-            "uid": "athena-iot-monitor"
-          },
-          "format": 0,
-          "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC",
-          "refId": "A"
-        }
-      ],
-      "title": "湿度",
-      "type": "timeseries"
+    "annotations": {
+      "grafana.app/createdBy": "access-policy:service",
+      "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerId": "Claude Code",
+      "grafana.app/sourceChecksum": "2e784af4e1b478b64fc99e374f886af7",
+      "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/iot-monitor.json",
+      "grafana.app/sourceTimestamp": "1784622697000",
+      "grafana.app/updatedBy": "access-policy:service",
+      "grafana.app/updatedTimestamp": "2026-07-21T08:31:45Z",
+      "grafana.app/folder": ""
     }
-  ],
-  "preload": false,
-  "refresh": "15m",
-  "schemaVersion": 42,
-  "tags": [],
-  "templating": {
-    "list": [
+  },
+  "spec": {
+    "annotations": [
       {
-        "current": {
-          "text": ["esp32-gw-aca7043d0a8c"],
-          "value": ["esp32-gw-aca7043d0a8c"]
-        },
-        "multi": true,
-        "name": "target_devices",
-        "options": [],
-        "query": "esp32-gw-aca7043d0a8c, esp32-gw-e072a1e60480",
-        "type": "custom",
-        "valuesFormat": "csv"
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'main(V)' AS metric,\n  main AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'sub(V)' AS metric,\n  sub AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 1,
+                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  'sub-main(V)' AS metric,\r\n  sub - main AS V\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC\r\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "バッテリ電圧",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 2,
+                  "max": 15,
+                  "min": 11,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "blue",
+                        "value": 0
+                      },
+                      {
+                        "color": "green",
+                        "value": 12.1
+                      },
+                      {
+                        "color": "red",
+                        "value": 14
+                      }
+                    ]
+                  },
+                  "unit": "volt"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "B V"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "min"
+                      },
+                      {
+                        "id": "max"
+                      },
+                      {
+                        "id": "decimals"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "A V main(V)"
+                    },
+                    "properties": [
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "dark-blue",
+                              "value": 0
+                            },
+                            {
+                              "color": "dark-green",
+                              "value": 12.1
+                            },
+                            {
+                              "color": "dark-red",
+                              "value": 14
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "table",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max_value,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "title": "充電量",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "fieldMinMax": false,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "amph"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "percent"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "max",
+                        "value": 100
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "semi-dark-red",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 10
+                            },
+                            {
+                              "color": "yellow",
+                              "value": 35
+                            },
+                            {
+                              "color": "green",
+                              "value": 75
+                            },
+                            {
+                              "color": "blue",
+                              "value": 90
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 22
+                      },
+                      {
+                        "id": "custom.gradientMode",
+                        "value": "scheme"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "title": "温度",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "continuous-BlYlRd"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "fieldMinMax": false,
+                  "max": 60,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "湿度",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "humidity"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "充放電流",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds",
+                    "seriesBy": "last"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": true,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 20,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "log": 2,
+                      "type": "symlog"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "fieldMinMax": false,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "red",
+                        "value": 0
+                      },
+                      {
+                        "color": "dark-red",
+                        "value": -20
+                      },
+                      {
+                        "color": "orange",
+                        "value": -2
+                      },
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "blue",
+                        "value": 2
+                      },
+                      {
+                        "color": "dark-blue",
+                        "value": 20
+                      }
+                    ]
+                  },
+                  "unit": "amp"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": false,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 2,
+                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  -- device_id || ' Ah' AS metric,\r\n  ROUND(ah / 14 * 12) * 5 * 60 AS \"h@14A\",\r\n  ROUND(ah / 30 * 12) * 5 * 60 AS \"h@30A\"\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "残り時間",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "continuous-GrYlRd"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "dthms"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "h@14A",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "max",
+                        "value": 51429
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "h@30A",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "max",
+                        "value": 24000
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "displayMode": "basic",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 3,
+              "width": 12,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 12,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 13
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 12,
+              "y": 20
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [],
+    "timeSettings": {
+      "autoRefresh": "15m",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "IoT モニター",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": ["esp32-gw-aca7043d0a8c"],
+            "value": ["esp32-gw-aca7043d0a8c"]
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "multi": true,
+          "name": "target_devices",
+          "options": [],
+          "query": "esp32-gw-aca7043d0a8c, esp32-gw-e072a1e60480",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
       }
     ]
-  },
-  "time": {
-    "from": "now-24h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "browser",
-  "title": "IoT モニター",
-  "uid": "iot-monitor",
-  "version": 19,
-  "weekStart": ""
+  }
 }
