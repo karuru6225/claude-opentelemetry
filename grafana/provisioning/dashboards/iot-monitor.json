@@ -5,8 +5,8 @@
     "name": "iot-monitor",
     "namespace": "default",
     "uid": "462c7fe7-b3e9-4af5-88bc-d3d12c6bfd4d",
-    "resourceVersion": "1784622705077992",
-    "generation": 3,
+    "resourceVersion": "1784638932466980",
+    "generation": 7,
     "creationTimestamp": "2026-07-04T11:31:09Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "1713189446529024"
@@ -15,11 +15,11 @@
       "grafana.app/createdBy": "access-policy:service",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "Claude Code",
-      "grafana.app/sourceChecksum": "2e784af4e1b478b64fc99e374f886af7",
+      "grafana.app/sourceChecksum": "16389ef9d330633f4bd1e35d0df5454c",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/iot-monitor.json",
-      "grafana.app/sourceTimestamp": "1784622697000",
+      "grafana.app/sourceTimestamp": "1784638924000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-07-21T08:31:45Z",
+      "grafana.app/updatedTimestamp": "2026-07-21T13:02:12Z",
       "grafana.app/folder": ""
     }
   },
@@ -871,6 +871,136 @@
             "version": "13.1.0"
           }
         }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": false,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 1,
+                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  temp\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "Board Temp",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic",
+                    "seriesBy": "last"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 27,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["lastNotNull"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
       }
     },
     "layout": {
@@ -908,6 +1038,19 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
                 "name": "panel-3"
               },
               "height": 10,
@@ -921,12 +1064,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-6"
+                "name": "panel-7"
               },
               "height": 10,
               "width": 12,
               "x": 0,
-              "y": 10
+              "y": 20
             }
           },
           {
