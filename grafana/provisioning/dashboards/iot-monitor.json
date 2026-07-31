@@ -74,7 +74,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'main(V)' AS metric,\n  main AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'sub(V)' AS metric,\n  sub AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'main(V)' AS metric,\n  main AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nUNION ALL\nSELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  'sub(V)' AS metric,\n  sub AS V\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -100,7 +100,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 1,
-                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  'sub-main(V)' AS metric,\r\n  sub - main AS V\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC\r\n"
+                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  'sub-main(V)' AS metric,\r\n  sub - main AS V\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC\r\n"
                       },
                       "version": "v0"
                     },
@@ -283,7 +283,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent,\n  ROUND(ah / ${divisor_amp} * 12) * 5 * 60 AS remaining\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' Ah' AS metric,\n  MAX(ah) OVER (\n    ORDER BY CAST($__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS DATE)\n    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW\n  ) as rolling_max,\n  ah AS Ah,\n  ah / 200.0 * 100.0 AS percent,\n  ROUND(ah / ${divisor_amp} * 12) * 5 * 60 AS remaining\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -502,7 +502,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || '温度(°C)' AS metric,\n  temp AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND regexp_like(\"addr\", '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}')\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -627,7 +627,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  addr || ' 湿度(%)' AS metric,\n  humidity AS value\nFROM sensor_data\nWHERE type IN ('thermometer', 'co2meter')\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND addr IN('D5:3A:43:46:5C:76', 'B0:E9:FE:F8:28:4B', 'D4:0E:84:C6:2C:6C', 'E1:23:4A:60:35:2E')\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -753,7 +753,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\n    OR\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n"
                       },
                       "version": "v0"
                     },
@@ -898,7 +898,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 1,
-                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  temp\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    (year = '${__from:date:YYYY}' AND month = '${__from:date:MM}' AND day >= '${__from:date:DD}')\r\n    OR\r\n    (year = '${__to:date:YYYY}'   AND month = '${__to:date:MM}'   AND day <= '${__to:date:DD}')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC"
+                        "rawSQL": "SELECT\r\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\r\n  temp\r\nFROM sensor_data\r\nWHERE type = 'battery'\r\n  AND (\r\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\r\n  )\r\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\r\n  AND device_id IN(${target_devices:singlequote})\r\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
