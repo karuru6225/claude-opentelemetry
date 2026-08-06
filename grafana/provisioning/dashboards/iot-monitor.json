@@ -5,8 +5,8 @@
     "name": "iot-monitor",
     "namespace": "default",
     "uid": "462c7fe7-b3e9-4af5-88bc-d3d12c6bfd4d",
-    "resourceVersion": "1784638932466980",
-    "generation": 7,
+    "resourceVersion": "1785507412760000",
+    "generation": 10,
     "creationTimestamp": "2026-07-04T11:31:09Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "1713189446529024"
@@ -15,11 +15,11 @@
       "grafana.app/createdBy": "access-policy:service",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "Claude Code",
-      "grafana.app/sourceChecksum": "16389ef9d330633f4bd1e35d0df5454c",
+      "grafana.app/sourceChecksum": "ac7474e9f625642f0b5b92ebc1e52929",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/iot-monitor.json",
-      "grafana.app/sourceTimestamp": "1784638924000",
+      "grafana.app/sourceTimestamp": "1785507403000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-07-21T13:02:12Z",
+      "grafana.app/updatedTimestamp": "2026-07-31T14:16:52Z",
       "grafana.app/folder": ""
     }
   },
@@ -239,7 +239,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "table",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -458,7 +460,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -583,7 +587,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -709,7 +715,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -753,7 +761,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 0,
-                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n"
+                        "rawSQL": "SELECT\n  $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') AS time,\n  -- device_id || ' A' AS metric,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts))\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as A,\n  (ah - LAG(ah, 1) OVER (PARTITION BY device_id ORDER BY ts)) * sub\n  /\n  (date_diff('second',\n    from_iso8601_timestamp(LAG(ts, 1) OVER (PARTITION BY device_id ORDER BY ts)),\n    from_iso8601_timestamp(ts)\n  ) / 3600.0) as W\nFROM sensor_data\nWHERE type = 'battery'\n  AND (\n    CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  )\n  AND $__parseTime(ts, 'yyyy-MM-dd''T''HH:mm:ss''Z') BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${target_devices:singlequote})\nORDER BY time ASC\n"
                       },
                       "version": "v0"
                     },
@@ -846,7 +854,33 @@
                   },
                   "unit": "amp"
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "W",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.gradientMode",
+                        "value": "none"
+                      },
+                      {
+                        "id": "unit",
+                        "value": "watt"
+                      }
+                    ]
+                  }
+                ]
               },
               "options": {
                 "annotations": {
@@ -854,7 +888,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -984,7 +1020,9 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": ["lastNotNull"],
+                  "calcs": [
+                    "lastNotNull"
+                  ],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -1119,8 +1157,12 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": ["esp32-gw-aca7043d0a8c"],
-            "value": ["esp32-gw-aca7043d0a8c"]
+            "text": [
+              "esp32-gw-aca7043d0a8c"
+            ],
+            "value": [
+              "esp32-gw-aca7043d0a8c"
+            ]
           },
           "hide": "dontHide",
           "includeAll": false,

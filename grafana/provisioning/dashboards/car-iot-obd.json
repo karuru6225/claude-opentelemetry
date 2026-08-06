@@ -5,8 +5,8 @@
     "name": "car-iot-obd",
     "namespace": "default",
     "uid": "c248d090-8ac1-4218-b1d9-8d59afd355a1",
-    "resourceVersion": "1785716708277998",
-    "generation": 6,
+    "resourceVersion": "1785719711544992",
+    "generation": 10,
     "creationTimestamp": "2026-08-02T04:34:52Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "3110474067890176"
@@ -15,11 +15,11 @@
       "grafana.app/createdBy": "access-policy:service",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "Claude Code",
-      "grafana.app/sourceChecksum": "b909de54fb8a5468d0f3bab7f6b6d53a",
+      "grafana.app/sourceChecksum": "9533be57db38ee072ed5615d51c7c77f",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/car-iot-obd.json",
-      "grafana.app/sourceTimestamp": "1785716698000",
+      "grafana.app/sourceTimestamp": "1785719701000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-08-03T00:25:08Z",
+      "grafana.app/updatedTimestamp": "2026-08-03T01:15:11Z",
       "grafana.app/folder": ""
     }
   },
@@ -141,7 +141,7 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
+                    "insertNulls": 15000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
@@ -336,7 +336,7 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
+                    "insertNulls": 15000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
@@ -543,7 +543,7 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
+                    "insertNulls": 15000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
@@ -574,7 +574,7 @@
                       }
                     ]
                   },
-                  "unit": "short"
+                  "unit": "rotrpm"
                 },
                 "overrides": [
                   {
@@ -589,7 +589,7 @@
                       },
                       {
                         "id": "unit",
-                        "value": "velocitykph"
+                        "value": "velocitykmh"
                       }
                     ]
                   },
@@ -754,7 +754,7 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
+                    "insertNulls": 15000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
@@ -953,7 +953,7 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
+                    "insertNulls": 15000,
                     "lineInterpolation": "linear",
                     "lineWidth": 1,
                     "pointSize": 5,
@@ -1109,7 +1109,30 @@
                     ]
                   }
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "speed_kmh"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 120
+                      }
+                    ]
+                  }
+                ]
               },
               "options": {
                 "controls": {
@@ -1125,7 +1148,7 @@
                     "config": {
                       "style": {
                         "color": {
-                          "fixed": "dark-green"
+                          "field": "speed_kmh"
                         },
                         "opacity": 0.4,
                         "rotation": {
