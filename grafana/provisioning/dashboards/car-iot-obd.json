@@ -1063,7 +1063,7 @@
                           "resultReuseMaxAgeInMinutes": 60
                         },
                         "format": 1,
-                        "rawSQL": "SELECT\n  from_unixtime(obd_ts) AS time,\n  device_id,\n  lat,\n  lon,\n  CAST(speed_kmh AS double) AS speed_kmh\nFROM obd_data\nWHERE\n  CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  AND from_unixtime(obd_ts) BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${obd_devices:singlequote})\n  AND lat IS NOT NULL\n  AND lon IS NOT NULL\nORDER BY time ASC"
+                        "rawSQL": "SELECT\n  from_unixtime(obd_ts) AS time,\n  date_format(from_unixtime(obd_ts) AT TIME ZONE 'Asia/Tokyo', '%H:%i:%s') || ' ' || CAST(CAST(ROUND(CAST(speed_kmh AS double)) AS BIGINT) AS VARCHAR) || 'km/h' AS \"時刻・速度\",\n  device_id,\n  lat,\n  lon,\n  CAST(speed_kmh AS double) AS speed_kmh\nFROM obd_data\nWHERE\n  CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  AND from_unixtime(obd_ts) BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${obd_devices:singlequote})\n  AND lat IS NOT NULL\n  AND lon IS NOT NULL\n  AND lat BETWEEN 20 AND 46\n  AND lon BETWEEN 122 AND 154\nORDER BY time ASC"
                       },
                       "version": "v0"
                     },
@@ -1131,6 +1131,22 @@
                         "value": 120
                       }
                     ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeAsLocal"
+                      },
+                      {
+                        "id": "displayName",
+                        "value": "時刻"
+                      }
+                    ]
                   }
                 ]
               },
@@ -1144,6 +1160,51 @@
                   "showZoom": true
                 },
                 "layers": [
+                  {
+                    "config": {
+                      "arrow": 0,
+                      "style": {
+                        "color": {
+                          "field": "speed_kmh"
+                        },
+                        "opacity": 0.8,
+                        "rotation": {
+                          "fixed": 0,
+                          "max": 360,
+                          "min": -360,
+                          "mode": "mod"
+                        },
+                        "size": {
+                          "fixed": 3,
+                          "max": 15,
+                          "min": 2
+                        },
+                        "symbol": {
+                          "fixed": "img/icons/marker/circle.svg",
+                          "mode": "fixed"
+                        },
+                        "symbolAlign": {
+                          "horizontal": "center",
+                          "vertical": "center"
+                        },
+                        "textConfig": {
+                          "fontSize": 12,
+                          "offsetX": 0,
+                          "offsetY": 0,
+                          "textAlign": "center",
+                          "textBaseline": "middle"
+                        }
+                      }
+                    },
+                    "location": {
+                      "latitude": "lat",
+                      "longitude": "lon",
+                      "mode": "coords"
+                    },
+                    "name": "経路",
+                    "tooltip": false,
+                    "type": "route"
+                  },
                   {
                     "config": {
                       "style": {
@@ -1199,7 +1260,7 @@
                   "lat": 0,
                   "lon": 0,
                   "noRepeat": false,
-                  "zoom": 1
+                  "zoom": 14
                 }
               }
             },
