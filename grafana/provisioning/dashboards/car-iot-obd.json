@@ -1267,6 +1267,91 @@
             "version": "13.1.0"
           }
         }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 1,
+                        "rawSQL": "SELECT\n  from_unixtime(obd_ts) AS time,\n  lat,\n  lon\nFROM obd_data\nWHERE\n  CONCAT(year, month, day, hour) BETWEEN date_format($__timeFrom(), '%Y%m%d%H') AND date_format($__timeTo(), '%Y%m%d%H')\n  AND from_unixtime(obd_ts) BETWEEN $__timeFrom() AND $__timeTo()\n  AND device_id IN(${obd_devices:singlequote})\n  AND lat IS NOT NULL\n  AND lon IS NOT NULL\n  AND lat BETWEEN 20 AND 46\n  AND lon BETWEEN 122 AND 154\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "表示中の時間範囲・車両のGPS座標をGPXファイルとしてダウンロードする",
+          "id": 9,
+          "links": [],
+          "title": "GPX エクスポート",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "const button = context.element.querySelector('#gpx-export-btn');\nconst status = context.element.querySelector('#gpx-export-status');\n\nif (!button) {\n  return;\n}\n\nconst pad = (n) => String(n).padStart(2, '0');\nconst stamp = (d) => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());\n\nconst handleClick = () => {\n  const rows = (context.data || [])\n    .filter((row) => row && row.lat != null && row.lon != null && row.time != null)\n    .map((row) => ({ lat: row.lat, lon: row.lon, time: new Date(row.time) }))\n    .sort((a, b) => a.time - b.time);\n\n  if (!rows.length) {\n    status.textContent = 'エクスポートするGPSデータがありません';\n    return;\n  }\n\n  const trkpts = rows\n    .map((row) => '      <trkpt lat=\"' + row.lat + '\" lon=\"' + row.lon + '\"><time>' + row.time.toISOString() + '</time></trkpt>')\n    .join('\\n');\n\n  const gpx = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' +\n    '<gpx version=\"1.1\" creator=\"car-iot-obd\" xmlns=\"http://www.topografix.com/GPX/1/1\">\\n' +\n    '  <trk>\\n' +\n    '    <name>走行経路</name>\\n' +\n    '    <trkseg>\\n' +\n    trkpts + '\\n' +\n    '    </trkseg>\\n' +\n    '  </trk>\\n' +\n    '</gpx>\\n';\n\n  const blob = new Blob([gpx], { type: 'application/gpx+xml' });\n  const url = URL.createObjectURL(blob);\n\n  const start = rows[0].time;\n  const end = rows[rows.length - 1].time;\n  const device = (context.grafana.replaceVariables('${obd_devices}') || 'device')\n    .replace(/[^a-zA-Z0-9_-]+/g, '_')\n    .replace(/^_+|_+$/g, '')\n    .slice(0, 40) || 'device';\n  const filename = 'track_' + stamp(start) + '-' + pad(end.getHours()) + pad(end.getMinutes()) + pad(end.getSeconds()) + '_' + device + '.gpx';\n\n  const link = document.createElement('a');\n  link.href = url;\n  link.download = filename;\n  context.element.appendChild(link);\n  link.click();\n  link.remove();\n  URL.revokeObjectURL(url);\n\n  status.textContent = rows.length + '件の座標を出力しました';\n};\n\nbutton.addEventListener('click', handleClick);\n\nreturn () => {\n  button.removeEventListener('click', handleClick);\n};",
+                "content": "<div class=\"gpx-export\">\n  <button id=\"gpx-export-btn\" class=\"gpx-export-btn\">GPXエクスポート</button>\n  <span id=\"gpx-export-status\" class=\"gpx-export-status\"></span>\n</div>",
+                "contentPartials": [],
+                "defaultContent": "この期間のGPSデータがありません",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": ["afterRender"],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "allRows",
+                "styles": ".gpx-export {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 8px;\n}\n.gpx-export-btn {\n  padding: 6px 16px;\n  cursor: pointer;\n}\n.gpx-export-status {\n  font-size: 12px;\n  opacity: 0.8;\n}",
+                "wrap": true
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
       }
     },
     "layout": {
@@ -1349,6 +1434,19 @@
               "width": 24,
               "x": 0,
               "y": 30
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 46
             }
           }
         ]
