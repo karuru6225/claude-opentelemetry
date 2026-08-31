@@ -1491,7 +1491,7 @@
           "multi": true,
           "name": "obd_devices",
           "options": [],
-          "query": "car-iot-aca704",
+          "query": "car-iot-aca704, car-iot-e072a1",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
