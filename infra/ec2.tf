@@ -4,11 +4,19 @@ locals {
 
   # subnet 指定時はその VPC に SG を紐づける。vpc_id も指定されていれば一致必須（precondition）
   vpc_id_for_security_group = var.subnet_id != null ? coalesce(var.vpc_id, data.aws_subnet.ec2[0].vpc_id) : var.vpc_id
+
+  # データ用EBSボリューム（ec2_data_volume.tf）をインスタンスと同じAZに固定するために使う。
+  # subnet_id 指定時はそのサブネットのAZ、未指定時（デフォルトVPC）は利用可能なAZの先頭を使う。
+  instance_az = var.subnet_id != null ? data.aws_subnet.ec2[0].availability_zone : data.aws_availability_zones.available.names[0]
 }
 
 data "aws_subnet" "ec2" {
   count = var.subnet_id != null ? 1 : 0
   id    = var.subnet_id
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
 check "vpc_requires_subnet" {
