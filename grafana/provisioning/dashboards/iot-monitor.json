@@ -5,8 +5,8 @@
     "name": "iot-monitor",
     "namespace": "default",
     "uid": "462c7fe7-b3e9-4af5-88bc-d3d12c6bfd4d",
-    "resourceVersion": "1788168212933997",
-    "generation": 15,
+    "resourceVersion": "1788168824836009",
+    "generation": 16,
     "creationTimestamp": "2026-07-04T11:31:09Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "1713189446529024"
@@ -15,11 +15,11 @@
       "grafana.app/createdBy": "access-policy:service",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "Claude Code",
-      "grafana.app/sourceChecksum": "a0171b7297fcb1b8a6c36748fb530803",
+      "grafana.app/sourceChecksum": "c6b9d53d34e0d24abf3b740700668a36",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/iot-monitor.json",
-      "grafana.app/sourceTimestamp": "1788168202000",
+      "grafana.app/sourceTimestamp": "1788168814000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-08-31T09:23:32Z",
+      "grafana.app/updatedTimestamp": "2026-08-31T09:33:44Z",
       "grafana.app/folder": ""
     }
   },
@@ -1157,7 +1157,7 @@
               },
               "options": {
                 "barRadius": 0,
-                "barWidth": 0.97,
+                "barWidth": 0.85,
                 "fullHighlight": false,
                 "groupWidth": 0.7,
                 "legend": {
@@ -1175,8 +1175,8 @@
                   "mode": "multi",
                   "sort": "none"
                 },
-                "xTickLabelRotation": 90,
-                "xTickLabelSpacing": 0
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 100
               }
             },
             "version": "13.1.0"
