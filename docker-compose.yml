@@ -53,7 +53,6 @@ services:
       - -c
       - |
         grafana cli plugins install grafana-athena-datasource || true
-        grafana cli plugins install yesoreyeram-infinity-datasource || true
         grafana cli plugins install marcusolsson-dynamictext-panel || true
         exec /run.sh
     volumes:
