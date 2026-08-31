@@ -57,3 +57,15 @@ output "ec2_control_api_endpoint" {
   description = "EC2 start/stop API のベースURL（M5AtomS3の config.h に設定する）"
   value       = var.enable_ec2_control ? aws_apigatewayv2_api.ec2_control[0].api_endpoint : null
 }
+
+output "grafana_infinity_access_key_id" {
+  description = "Grafana Infinityデータソース用IAMアクセスキーID。.env の INFINITY_AWS_ACCESS_KEY_ID に手動で貼る"
+  value       = aws_iam_access_key.grafana_infinity.id
+  sensitive   = true
+}
+
+output "grafana_infinity_secret_access_key" {
+  description = "Grafana Infinityデータソース用IAMシークレットキー。.env の INFINITY_AWS_SECRET_ACCESS_KEY に手動で貼る"
+  value       = aws_iam_access_key.grafana_infinity.secret
+  sensitive   = true
+}
