@@ -1071,7 +1071,7 @@
           "links": [],
           "title": "日次充放電量（rollup、長期）",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "barchart",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -1085,9 +1085,6 @@
                     "axisColorMode": "text",
                     "axisLabel": "",
                     "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.8,
-                    "drawStyle": "bars",
                     "fillOpacity": 80,
                     "gradientMode": "none",
                     "hideFrom": {
@@ -1095,18 +1092,9 @@
                       "tooltip": false,
                       "viz": false
                     },
-                    "insertNulls": false,
                     "lineWidth": 1,
-                    "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
@@ -1167,23 +1155,25 @@
                 ]
               },
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
                 "legend": {
                   "calcs": ["sum"],
                   "displayMode": "list",
-                  "enableFacetedFilter": false,
-                  "overflow": "ellipsis",
                   "placement": "bottom",
                   "showLegend": true
                 },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "normal",
                 "tooltip": {
-                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
-                }
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
               }
             },
             "version": "13.1.0"
