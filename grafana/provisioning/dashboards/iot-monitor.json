@@ -239,9 +239,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "table",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -460,9 +458,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -587,9 +583,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -715,9 +709,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -888,9 +880,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -1020,9 +1010,7 @@
                   "multiLane": false
                 },
                 "legend": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "displayMode": "list",
                   "enableFacetedFilter": false,
                   "overflow": "ellipsis",
@@ -1032,6 +1020,168 @@
                 "tooltip": {
                   "hideZeros": false,
                   "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "athena-iot-monitor"
+                      },
+                      "group": "grafana-athena-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "connectionArgs": {
+                          "catalog": "__default",
+                          "database": "__default",
+                          "region": "__default",
+                          "resultReuseEnabled": true,
+                          "resultReuseMaxAgeInMinutes": 60
+                        },
+                        "format": 0,
+                        "rawSQL": "SELECT\n  date_parse(date, '%Y-%m-%d') AS time,\n  charge_ah AS charge,\n  -discharge_ah AS discharge\nFROM battery_rollup\nWHERE device_id IN(${target_devices:singlequote})\n  AND CONCAT(year, month) BETWEEN date_format(date_add('day', -${lookback_days}, current_date), '%Y%m') AND date_format(current_date, '%Y%m')\n  AND date >= date_format(date_add('day', -${lookback_days}, current_date), '%Y-%m-%d')\nORDER BY time ASC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "battery_rollup Lambda（日次バッチ、EventBridge Scheduler毎日JST01:00起動）がrollup/に事前計算したAh単位の日次集計。当日・前日はまだrollup化されていないため表示されない。ダッシュボードの時間範囲ピッカーとは連動せず、変数「lookback_days」で表示日数（直近何日分をさかのぼるか）を指定する。",
+          "id": 8,
+          "links": [],
+          "title": "日次充放電量（rollup、長期）",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": true,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "drawStyle": "bars",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "fieldMinMax": false,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "amph"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "charge"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "充電"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "blue",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "discharge"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "放電"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": ["sum"],
+                  "displayMode": "list",
+                  "enableFacetedFilter": false,
+                  "overflow": "ellipsis",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
                   "sort": "none"
                 }
               }
@@ -1122,6 +1272,19 @@
               "x": 12,
               "y": 20
             }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 30
+            }
           }
         ]
       }
@@ -1131,7 +1294,7 @@
     "preload": false,
     "tags": [],
     "timeSettings": {
-      "autoRefresh": "15m",
+      "autoRefresh": "30m",
       "autoRefreshIntervals": [
         "5s",
         "10s",
@@ -1157,12 +1320,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": [
-              "esp32-gw-aca7043d0a8c"
-            ],
-            "value": [
-              "esp32-gw-aca7043d0a8c"
-            ]
+            "text": ["esp32-gw-aca7043d0a8c"],
+            "value": ["esp32-gw-aca7043d0a8c"]
           },
           "hide": "dontHide",
           "includeAll": false,
@@ -1188,6 +1347,24 @@
           "name": "divisor_amp",
           "options": [],
           "query": "1, 4, 14, 30",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "90",
+            "value": "90"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "multi": false,
+          "name": "lookback_days",
+          "options": [],
+          "query": "30, 90, 180, 365, 730",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
