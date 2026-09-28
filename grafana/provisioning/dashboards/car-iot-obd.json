@@ -1151,6 +1151,11 @@
                 ]
               },
               "options": {
+                "basemap": {
+                  "config": {},
+                  "name": "ベースマップ",
+                  "type": "osm-standard"
+                },
                 "controls": {
                   "mouseWheelZoom": true,
                   "showAttribution": true,
